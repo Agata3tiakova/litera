@@ -10,7 +10,7 @@ from app.services.image_processor import (
     preprocess_image,
     save_uploaded_file,
 )
-from app.services.ocr import list_ocr_providers
+from app.services.ocr import get_ocr_provider, list_ocr_providers
 from app.services.text_analyzer import analyze_text, clean_text
 
 bp = Blueprint("main", __name__)
@@ -42,24 +42,29 @@ def process_image():
         if not file or file.filename == "":
             return jsonify({"error": "empty file"}), 400
 
+        provider = request.form.get("provider") or current_app.config.get("OCR_PROVIDER")
+        get_ocr_provider(provider)
+
         path = save_uploaded_file(file, current_app.config["UPLOAD_FOLDER"])
         preprocess_image(path)
         file_hash = hash_image(path)
+        cache_key = f"{provider}:{file_hash}"
 
-        cached = AnalysisResult.query.filter_by(filename=file_hash).first()
+        cached = AnalysisResult.query.filter_by(filename=cache_key).first()
         if cached:
             return json_response({
                 "id": cached.id,
+                "provider": provider,
                 "recognized_text": cached.recognized_text,
             })
 
-        text = ocr_extract_text(path, current_app.config)
+        text = ocr_extract_text(path, current_app.config, provider)
         if not text:
             return jsonify({"error": "OCR failed or empty text"}), 500
 
         cleaned_text = clean_text(text)
         result = AnalysisResult(
-            filename=file_hash,
+            filename=cache_key,
             recognized_text=cleaned_text,
             result_json=None,
         )
@@ -69,6 +74,7 @@ def process_image():
 
         return json_response({
             "id": result.id,
+            "provider": provider,
             "recognized_text": cleaned_text,
         })
 
@@ -113,7 +119,11 @@ def get_result(result_id):
 
 @bp.route("/")
 def index():
-    return render_template("index_dark.html")
+    return render_template(
+        "index_dark.html",
+        default_ocr_provider=current_app.config.get("OCR_PROVIDER"),
+        ocr_providers=list_ocr_providers(),
+    )
 
 
 @bp.route("/results/<int:result_id>")

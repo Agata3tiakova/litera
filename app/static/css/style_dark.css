@@ -89,6 +89,22 @@
     background-color: rgba(255,255,255,0.05);
     transition: 0.2s ease;
 }
+
+.ocr-provider-control {
+    max-width: 320px;
+    text-align: left;
+}
+
+.form-select-dark {
+    background-color: rgba(26, 32, 44, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+}
+
+.form-select-dark:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
+}
 .text-editor-card {
     background: rgba(45, 55, 72, 0.8);
     border: 1px solid rgba(74, 85, 104, 0.5);

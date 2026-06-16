@@ -6,6 +6,8 @@ const uploadStatus = document.getElementById("uploadStatus");
 const uploadResult = document.getElementById("uploadResult");
 const imagePreview = document.getElementById("imagePreview");
 const goToResultBtn = document.getElementById("goToResultBtn");
+const ocrProviderSelect = document.getElementById("ocrProviderSelect");
+const ocrProviderUsed = document.getElementById("ocrProviderUsed");
 
 let lastResultId = null;
 
@@ -40,6 +42,9 @@ if (uploadCard && uploadButton && fileInput && uploadStatus && uploadResult && i
 
         const formData = new FormData();
         formData.append("file", file);
+        if (ocrProviderSelect) {
+            formData.append("provider", ocrProviderSelect.value);
+        }
 
         try {
             const response = await fetch("/api/process", {
@@ -56,6 +61,9 @@ if (uploadCard && uploadButton && fileInput && uploadStatus && uploadResult && i
             }
 
             lastResultId = data.id;
+            if (ocrProviderUsed && data.provider) {
+                ocrProviderUsed.textContent = `Распознано через: ${data.provider}`;
+            }
             uploadResult.style.display = "block";
 
         } catch (err) {

@@ -83,9 +83,9 @@ def preprocess_image(path: str) -> str:
     return path
 
 
-def ocr_extract_text(path: str, config: dict) -> str:
+def ocr_extract_text(path: str, config: dict, provider: str | None = None) -> str:
     try:
-        return run_ocr(path, config).text
+        return run_ocr(path, config, provider).text
     except Exception:
         logger.exception("OCR error")
         return ''
