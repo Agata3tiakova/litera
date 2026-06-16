@@ -35,7 +35,9 @@
                                 <div class="upload-content text-center py-5">
                                     <i class="bi bi-file-earmark-arrow-up display-4 mb-3"></i>
                                     <h5>Перетащите файл сюда</h5>
-                                    <div class="ocr-provider-control mx-auto my-4">
+                                    <p class="text-light" style="opacity: 0.7;">или</p>
+                                    <button class="btn btn-gradient" id="uploadButton">Выбрать на устройстве</button>
+                                    <div class="ocr-provider-control mx-auto mt-4 mb-2">
                                         <label for="ocrProviderSelect" class="form-label text-light mb-2">
                                             OCR-провайдер
                                         </label>
@@ -47,8 +49,6 @@
                                             {% endfor %}
                                         </select>
                                     </div>
-                                    <p class="text-light" style="opacity: 0.7;">или</p>
-                                    <button class="btn btn-gradient" id="uploadButton">Выбрать на устройстве</button>
                                     <input type="file" id="fileInput" accept="image/*" style="display: none;">
                                     <div id="uploadStatus" class="text-light mt-3" style="display: none;">
                                         <div class="spinner-border text-light" role="status"></div>
