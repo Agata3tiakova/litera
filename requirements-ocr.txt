@@ -1,0 +1,9 @@
+# Optional OCR engines for benchmarking.
+# Install only the providers you plan to test; some packages are large.
+
+pytesseract
+easyocr
+paddleocr
+transformers
+torch
+torchvision

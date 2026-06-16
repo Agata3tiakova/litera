@@ -8,3 +8,5 @@ __pycache__/
 instance/
 uploads/
 .idea/
+tmp/
+ocr_benchmark_results*.csv

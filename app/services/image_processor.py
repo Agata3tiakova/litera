@@ -1,12 +1,12 @@
 import os
-import base64
 import hashlib
 import logging
-import requests
 from uuid import uuid4
 
 import cv2
 import numpy as np
+
+from app.services.ocr import run_ocr
 
 logger = logging.getLogger(__name__)
 
@@ -84,67 +84,8 @@ def preprocess_image(path: str) -> str:
 
 
 def ocr_extract_text(path: str, config: dict) -> str:
-    vision_key = config.get('VISION_API_KEY') or os.getenv('VISION_API_KEY')
-    vision_url = config.get('VISION_API_URL') or os.getenv('VISION_API_URL')
-
-    if not vision_key or not vision_url:
-        raise RuntimeError("Yandex Vision API key or URL not set")
-
-    with open(path, 'rb') as f:
-        image_bytes = f.read()
-
-    image_b64 = base64.b64encode(image_bytes).decode('utf-8')
-
-    payload = {
-        "analyze_specs": [{
-            "content": image_b64,
-            "features": [{
-                "type": "TEXT_DETECTION",
-                "text_detection_config": {
-                    "language_codes": ["ru"]
-                }
-            }]
-        }]
-    }
-
-    headers = {
-        "Authorization": f"Api-Key {vision_key}",
-        "Content-Type": "application/json"
-    }
-
     try:
-        response = requests.post(
-            vision_url,
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
-        response.raise_for_status()
-        data = response.json()
-
-        pages = (
-            data
-            .get('results', [{}])[0]
-            .get('results', [{}])[0]
-            .get('textDetection', {})
-            .get('pages', [])
-        )
-
-        all_text = []
-
-        for page in pages:
-            for block in page.get('blocks', []):
-                for line in block.get('lines', []):
-                    words = [
-                        w.get('text', '')
-                        for w in line.get('words', [])
-                    ]
-                    all_text.append(' '.join(words))
-
-        text = '\n'.join(all_text).strip()
-
-        return text
-
+        return run_ocr(path, config).text
     except Exception:
-        logger.exception("Yandex Vision error")
+        logger.exception("OCR error")
         return ''

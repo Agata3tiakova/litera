@@ -10,6 +10,7 @@ from app.services.image_processor import (
     preprocess_image,
     save_uploaded_file,
 )
+from app.services.ocr import list_ocr_providers
 from app.services.text_analyzer import analyze_text, clean_text
 
 bp = Blueprint("main", __name__)
@@ -20,6 +21,14 @@ def ping():
     return jsonify({
         "status": "ok",
         "message": "Liter backend online",
+    })
+
+
+@bp.route("/api/ocr/providers")
+def ocr_providers():
+    return jsonify({
+        "default": current_app.config.get("OCR_PROVIDER"),
+        "providers": list_ocr_providers(),
     })
 
 
