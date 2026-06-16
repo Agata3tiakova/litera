@@ -1,0 +1,10 @@
+.env
+sa-key.json
+
+.venv/
+__pycache__/
+*.py[cod]
+
+instance/
+uploads/
+.idea/

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Главная - Литера{% endblock %}
+
+{% block content %}
+<div class="dark-theme min-vh-100">
+
+    <div class="hero-gradient py-5">
+        <div class="container">
+            <div class="row justify-content-center text-center">
+                <div class="col-lg-8">
+                    <h1 class="hero-title mb-4">
+                        Превратите текст в знания
+                    </h1>
+                    <p class="hero-subtitle mb-5">
+                        AI-платформа для глубокого анализа грамотности и построения персональной траектории обучения
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+
+                <div class="vertical-steps">
+                    <div class="step-item active">
+                        <div class="step-number">01</div>
+                        <div class="step-content">
+                            <h4>Загрузка документа</h4>
+                            <p class="text-light" style="opacity: 0.7;">Загрузите фото или скан рукописного текста</p>
+
+                            <div class="upload-card-dark mt-3">
+                                <div class="upload-content text-center py-5">
+                                    <i class="bi bi-file-earmark-arrow-up display-4 mb-3"></i>
+                                    <h5>Перетащите файл сюда</h5>
+                                    <p class="text-light" style="opacity: 0.7;">или</p>
+                                    <button class="btn btn-gradient" id="uploadButton">Выбрать на устройстве</button>
+                                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                                    <div id="uploadStatus" class="text-light mt-3" style="display: none;">
+                                        <div class="spinner-border text-light" role="status"></div>
+                                        <p class="mt-2">Обработка файла…</p>
+                                    </div>
+                                    <div id="uploadResult" class="text-light mt-4 text-center" style="display:none;">
+                                        <h5 class="mb-3">Файл загружен</h5>
+                                        <img id="imagePreview"
+                                             class="img-fluid rounded mb-3"
+                                             style="max-height:300px;"
+                                             alt="Preview">
+                                        <div>
+                                            <button id="goToResultBtn" class="btn btn-gradient">
+                                                Приступить к распознанию
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-number">02</div>
+                        <div class="step-content">
+                            <h4>AI Обработка</h4>
+                            <p class="text-light" style="opacity: 0.7;">Нейросеть распознает рукописный текст</p>
+                        </div>
+                    </div>
+
+                    <div class="step-item">
+                        <div class="step-number">03</div>
+                        <div class="step-content">
+                            <h4>Детальный анализ</h4>
+                            <p class="text-light" style="opacity: 0.7;">Получите подробный разбор ошибок и рекомендации</p>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
