@@ -7,3 +7,5 @@ paddleocr
 transformers
 torch
 torchvision
+accelerate
+timm

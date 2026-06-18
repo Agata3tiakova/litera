@@ -2,10 +2,15 @@ import argparse
 import csv
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
 from dotenv import load_dotenv
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from app.config import Config
 from app.services.image_processor import preprocess_image
@@ -24,7 +29,11 @@ def main():
     )
     parser.add_argument(
         "--providers",
-        default="yandex,tesseract,easyocr,paddleocr,trocr,google_vision,azure_vision",
+        default=(
+            "yandex,tesseract,easyocr,paddleocr,trocr,google_vision,azure_vision,"
+            "qwen25_vl_7b,qwen25_vl_32b,qwen25_vl_72b,gemma3_vision,"
+            "internvl,minicpm_v,florence2"
+        ),
         help="Comma-separated OCR providers.",
     )
     parser.add_argument("--output", default="ocr_benchmark_results.csv")

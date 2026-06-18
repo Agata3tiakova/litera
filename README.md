@@ -33,8 +33,23 @@ The app uses `OCR_PROVIDER=yandex` by default. OCR engines are implemented as in
 - `trocr` - Hugging Face TrOCR model interface;
 - `google_vision` - Google Cloud Vision OCR via REST API;
 - `azure_vision` - Azure Vision Read OCR via REST API.
+- `qwen25_vl_7b` - Qwen2.5-VL 7B via OpenRouter-compatible chat completions;
+- `qwen25_vl_32b` - Qwen2.5-VL 32B via OpenRouter-compatible chat completions;
+- `qwen25_vl_72b` - Qwen2.5-VL 72B via OpenRouter-compatible chat completions;
+- `gemma3_vision` - Gemma 3 Vision via OpenRouter-compatible chat completions;
+- `internvl` - InternVL via OpenRouter-compatible chat completions;
+- `minicpm_v` - MiniCPM-V via OpenRouter-compatible chat completions;
+- `florence2` - local Microsoft Florence-2 through Hugging Face Transformers.
 
 For Russian handwritten text, Yandex and other cloud OCR systems are good baselines to benchmark first. EasyOCR and PaddleOCR are useful local baselines with Cyrillic support, but should be measured on your own handwriting samples. TrOCR is included for experimentation, but the default public handwritten model is not Russian-specific; it will likely need a Cyrillic or project-specific fine-tuned model.
+
+The VLM providers are not classic OCR engines. They send the image with this prompt by default:
+
+```text
+Transcribe this Russian handwritten text exactly. Preserve line breaks. Return only the transcribed text.
+```
+
+OpenRouter model identifiers can change by provider availability, so the defaults in `.env.example` are meant as starting points. Override them in `.env` when a provider exposes a different model id.
 
 ## Local Setup
 
@@ -77,7 +92,7 @@ Run a benchmark:
 python scripts/ocr_benchmark.py ^
   --images data/ocr/images ^
   --ground-truth data/ocr/ground_truth ^
-  --providers yandex,tesseract,easyocr,paddleocr,trocr
+  --providers yandex,tesseract,easyocr,paddleocr,trocr,qwen25_vl_7b,gemma3_vision,minicpm_v,florence2
 ```
 
 The script writes a CSV report with recognized text, runtime, CER, and WER for each provider.
@@ -90,6 +105,31 @@ Recommended first test set:
 - separate groups for clean scans, phone photos, tilted pages, and low contrast.
 
 Use CER to track character-level improvements and WER to track word-level readability.
+
+Suggested research table:
+
+| Provider | Type | CER | WER | Speed | Cost |
+| --- | --- | --- | --- | --- | --- |
+| `tesseract` | OCR |  |  |  |  |
+| `easyocr` | OCR |  |  |  |  |
+| `google_vision` | OCR API |  |  |  |  |
+| `azure_vision` | OCR API |  |  |  |  |
+| `yandex` | OCR API |  |  |  |  |
+| `trocr` | Transformer OCR |  |  |  |  |
+| `qwen25_vl_7b` | VLM |  |  |  |  |
+| `qwen25_vl_32b` | VLM |  |  |  |  |
+| `qwen25_vl_72b` | VLM |  |  |  |  |
+| `gemma3_vision` | VLM |  |  |  |  |
+| `internvl` | VLM |  |  |  |  |
+| `minicpm_v` | VLM |  |  |  |  |
+| `florence2` | VLM / document understanding |  |  |  |  |
+
+For the educational task, evaluate two layers separately:
+
+- OCR/VLM to text: CER, WER, speed, and cost;
+- OCR/VLM to error detection: whether the final grammar analysis finds the real student mistakes.
+
+This second layer matters because an OCR system with worse WER may still preserve the mistakes that are important for feedback.
 
 ## Project Structure
 
