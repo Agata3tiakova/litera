@@ -30,7 +30,7 @@ def main():
     parser.add_argument(
         "--providers",
         default=(
-            "yandex,tesseract,easyocr,paddleocr,trocr,google_vision,azure_vision,"
+            "yandex,tesseract,easyocr,paddleocr,trocr,"
             "qwen25_vl_7b,qwen25_vl_32b,qwen25_vl_72b,gemma3_vision,"
             "internvl,minicpm_v,florence2"
         ),

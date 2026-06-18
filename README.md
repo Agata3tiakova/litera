@@ -31,8 +31,6 @@ The app uses `OCR_PROVIDER=yandex` by default. OCR engines are implemented as in
 - `easyocr` - local EasyOCR with Russian and English languages;
 - `paddleocr` - local PaddleOCR with Cyrillic model settings;
 - `trocr` - Hugging Face TrOCR model interface;
-- `google_vision` - Google Cloud Vision OCR via REST API;
-- `azure_vision` - Azure Vision Read OCR via REST API.
 - `qwen25_vl_7b` - Qwen2.5-VL 7B via OpenRouter-compatible chat completions;
 - `qwen25_vl_32b` - Qwen2.5-VL 32B via OpenRouter-compatible chat completions;
 - `qwen25_vl_72b` - Qwen2.5-VL 72B via OpenRouter-compatible chat completions;
@@ -112,8 +110,6 @@ Suggested research table:
 | --- | --- | --- | --- | --- | --- |
 | `tesseract` | OCR |  |  |  |  |
 | `easyocr` | OCR |  |  |  |  |
-| `google_vision` | OCR API |  |  |  |  |
-| `azure_vision` | OCR API |  |  |  |  |
 | `yandex` | OCR API |  |  |  |  |
 | `trocr` | Transformer OCR |  |  |  |  |
 | `qwen25_vl_7b` | VLM |  |  |  |  |

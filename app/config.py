@@ -31,11 +31,6 @@ class Config:
     PADDLEOCR_LANG = os.getenv("PADDLEOCR_LANG", "cyrillic")
     PADDLEOCR_USE_ANGLE_CLS = os.getenv("PADDLEOCR_USE_ANGLE_CLS", "true")
 
-    GOOGLE_VISION_API_KEY = os.getenv("GOOGLE_VISION_API_KEY")
-
-    AZURE_VISION_ENDPOINT = os.getenv("AZURE_VISION_ENDPOINT")
-    AZURE_VISION_KEY = os.getenv("AZURE_VISION_KEY")
-
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
     OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
     VLM_OCR_PROMPT = os.getenv(

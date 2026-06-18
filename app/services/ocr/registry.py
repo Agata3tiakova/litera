@@ -1,8 +1,6 @@
 from app.services.ocr.base import OCRProvider, OCRResult
-from app.services.ocr.azure_vision_provider import AzureVisionProvider
 from app.services.ocr.easyocr_provider import EasyOCRProvider
 from app.services.ocr.florence2_provider import Florence2Provider
-from app.services.ocr.google_vision_provider import GoogleVisionProvider
 from app.services.ocr.openrouter_vlm_provider import (
     Gemma3VisionProvider,
     InternVLProvider,
@@ -17,8 +15,6 @@ from app.services.ocr.trocr_provider import TrOCRProvider
 from app.services.ocr.yandex_provider import YandexVisionProvider
 
 PROVIDERS = {
-    "azure_vision": AzureVisionProvider,
-    "google_vision": GoogleVisionProvider,
     "yandex": YandexVisionProvider,
     "tesseract": TesseractProvider,
     "easyocr": EasyOCRProvider,
