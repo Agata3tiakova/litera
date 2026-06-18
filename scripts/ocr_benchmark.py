@@ -8,6 +8,11 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
@@ -30,7 +35,7 @@ def main():
     parser.add_argument(
         "--providers",
         default=(
-            "yandex,tesseract,easyocr,paddleocr,trocr,"
+            "yandex,tesseract,easyocr,trocr,"
             "qwen25_vl_7b,qwen25_vl_32b,qwen25_vl_72b,gemma3_vision,"
             "internvl,minicpm_v,florence2"
         ),

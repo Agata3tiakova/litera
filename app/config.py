@@ -28,9 +28,6 @@ class Config:
 
     TROCR_MODEL = os.getenv("TROCR_MODEL", "microsoft/trocr-base-handwritten")
 
-    PADDLEOCR_LANG = os.getenv("PADDLEOCR_LANG", "cyrillic")
-    PADDLEOCR_USE_ANGLE_CLS = os.getenv("PADDLEOCR_USE_ANGLE_CLS", "true")
-
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
     OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
     VLM_OCR_PROMPT = os.getenv(

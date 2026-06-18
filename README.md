@@ -29,7 +29,6 @@ The app uses `OCR_PROVIDER=yandex` by default. OCR engines are implemented as in
 - `yandex` - current Yandex Vision integration;
 - `tesseract` - local Tesseract via `pytesseract`;
 - `easyocr` - local EasyOCR with Russian and English languages;
-- `paddleocr` - local PaddleOCR with Cyrillic model settings;
 - `trocr` - Hugging Face TrOCR model interface;
 - `qwen25_vl_7b` - Qwen2.5-VL 7B via OpenRouter-compatible chat completions;
 - `qwen25_vl_32b` - Qwen2.5-VL 32B via OpenRouter-compatible chat completions;
@@ -39,7 +38,7 @@ The app uses `OCR_PROVIDER=yandex` by default. OCR engines are implemented as in
 - `minicpm_v` - MiniCPM-V via OpenRouter-compatible chat completions;
 - `florence2` - local Microsoft Florence-2 through Hugging Face Transformers.
 
-For Russian handwritten text, Yandex and other cloud OCR systems are good baselines to benchmark first. EasyOCR and PaddleOCR are useful local baselines with Cyrillic support, but should be measured on your own handwriting samples. TrOCR is included for experimentation, but the default public handwritten model is not Russian-specific; it will likely need a Cyrillic or project-specific fine-tuned model.
+For Russian handwritten text, Yandex and other cloud OCR systems are good baselines to benchmark first. EasyOCR is a useful local baseline with Cyrillic support, but should be measured on your own handwriting samples. TrOCR is included for experimentation, but the default public handwritten model is not Russian-specific; it will likely need a Cyrillic or project-specific fine-tuned model.
 
 The VLM providers are not classic OCR engines. They send the image with this prompt by default:
 
@@ -90,7 +89,7 @@ Run a benchmark:
 python scripts/ocr_benchmark.py ^
   --images data/ocr/images ^
   --ground-truth data/ocr/ground_truth ^
-  --providers yandex,tesseract,easyocr,paddleocr,trocr,qwen25_vl_7b,gemma3_vision,minicpm_v,florence2
+  --providers yandex,tesseract,easyocr,trocr,qwen25_vl_7b,gemma3_vision,minicpm_v,florence2
 ```
 
 The script writes a CSV report with recognized text, runtime, CER, and WER for each provider.

@@ -9,7 +9,6 @@ from app.services.ocr.openrouter_vlm_provider import (
     Qwen25VL32BProvider,
     Qwen25VL72BProvider,
 )
-from app.services.ocr.paddleocr_provider import PaddleOCRProvider
 from app.services.ocr.tesseract_provider import TesseractProvider
 from app.services.ocr.trocr_provider import TrOCRProvider
 from app.services.ocr.yandex_provider import YandexVisionProvider
@@ -19,7 +18,6 @@ PROVIDERS = {
     "tesseract": TesseractProvider,
     "easyocr": EasyOCRProvider,
     "trocr": TrOCRProvider,
-    "paddleocr": PaddleOCRProvider,
     "qwen25_vl_7b": Qwen25VL7BProvider,
     "qwen25_vl_32b": Qwen25VL32BProvider,
     "qwen25_vl_72b": Qwen25VL72BProvider,
