@@ -30,6 +30,8 @@ class Config:
 
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
     OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+    OPENROUTER_MAX_RETRIES = os.getenv("OPENROUTER_MAX_RETRIES", "3")
+    OPENROUTER_RETRY_DELAY = os.getenv("OPENROUTER_RETRY_DELAY", "5")
     VLM_OCR_PROMPT = os.getenv(
         "VLM_OCR_PROMPT",
         "Transcribe this Russian handwritten text exactly. Preserve line breaks. Return only the transcribed text.",

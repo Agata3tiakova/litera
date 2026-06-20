@@ -52,11 +52,12 @@ class OpenRouterVLMProvider:
             "Content-Type": "application/json",
         }
 
-        response = requests.post(
+        response = _post_with_retry(
             f"{base_url}/chat/completions",
             headers=headers,
-            json=payload,
-            timeout=120,
+            payload=payload,
+            max_retries=int(config.get("OPENROUTER_MAX_RETRIES") or os.getenv("OPENROUTER_MAX_RETRIES", "3")),
+            retry_delay=float(config.get("OPENROUTER_RETRY_DELAY") or os.getenv("OPENROUTER_RETRY_DELAY", "5")),
         )
         response.raise_for_status()
         data = response.json()
@@ -115,6 +116,41 @@ def _image_data_url(image_path: str) -> str:
     with open(image_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode("utf-8")
     return f"data:{mime_type};base64,{encoded}"
+
+
+def _post_with_retry(
+    url: str,
+    headers: dict,
+    payload: dict,
+    max_retries: int,
+    retry_delay: float,
+) -> requests.Response:
+    last_response = None
+    for attempt in range(max_retries + 1):
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=120,
+        )
+        if response.status_code not in {429, 500, 502, 503, 504}:
+            return response
+
+        last_response = response
+        if attempt >= max_retries:
+            return response
+
+        retry_after = response.headers.get("Retry-After")
+        if retry_after:
+            try:
+                delay = float(retry_after)
+            except ValueError:
+                delay = retry_delay
+        else:
+            delay = retry_delay * (attempt + 1)
+        time.sleep(delay)
+
+    return last_response
 
 
 def _clean_vlm_text(text: str) -> str:

@@ -94,6 +94,48 @@ python scripts/ocr_benchmark.py ^
 
 The script writes a CSV report with recognized text, runtime, CER, and WER for each provider.
 
+To compare preprocessing strategies, pass image variants explicitly:
+
+```bash
+python scripts/ocr_benchmark.py ^
+  --images data/ocr/images ^
+  --ground-truth data/ocr/ground_truth ^
+  --providers yandex,qwen25_vl_72b,gemma3_vision,tesseract ^
+  --keep-original ^
+  --variants original,grayscale_soft,contrast,denoise,deskew,line_removed,otsu_binary ^
+  --output tmp/ocr_benchmark_results.csv ^
+  --analysis-output tmp/ocr_benchmark_analysis.md
+```
+
+Available variants:
+
+- `original` - unchanged source image;
+- `grayscale_soft` - grayscale without hard thresholding;
+- `contrast` - local contrast enhancement with CLAHE;
+- `denoise` - light color denoising;
+- `deskew` - automatic rotation correction for small skew angles;
+- `line_removed` - experimental notebook line removal;
+- `otsu_binary` - hard black-and-white thresholding, useful as a baseline.
+
+The optional Markdown analysis report summarizes full-text OCR errors: word substitutions, missing words, extra words, punctuation differences, line-break differences, and hyphenated line breaks.
+
+For VLM providers, you can compare transcription prompts:
+
+```bash
+python scripts/ocr_benchmark.py ^
+  --images data/ocr/images ^
+  --ground-truth data/ocr/ground_truth ^
+  --providers qwen25_vl_72b,gemma3_vision ^
+  --keep-original ^
+  --variants original ^
+  --prompt-variants default,exact_no_correction,school_notebook,literal_uncertain ^
+  --output tmp/ocr_prompt_benchmark.csv ^
+  --analysis-output tmp/ocr_prompt_benchmark.md
+```
+
+Prompt variants are applied only to VLM providers. Classic OCR providers use their normal settings.
+OpenRouter requests are retried on temporary rate limits and server errors. Tune `OPENROUTER_MAX_RETRIES` and `OPENROUTER_RETRY_DELAY` in `.env` if prompt/model sweeps hit provider limits.
+
 Recommended first test set:
 
 - 30-50 Russian handwritten samples from different writers;
