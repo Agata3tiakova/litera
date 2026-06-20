@@ -156,6 +156,18 @@ python scripts/ocr_benchmark.py ^
 
 Repeated reports include `repeat_index` in CSV and aggregate min/max/std values for normalized CER in Markdown.
 
+To build a weighted consensus report from an existing benchmark CSV:
+
+```bash
+python scripts/ocr_ensemble.py ^
+  --input tmp/ocr_benchmark_results.csv ^
+  --output-dir tmp/ocr_ensemble ^
+  --ground-truth data/ocr/student_text ^
+  --clean-ground-truth data/ocr/correct_text
+```
+
+The ensemble script uses the best provider as the base text, weights other providers by observed normalized CER, keeps text where stronger models agree, and writes `word_confidence.csv` to flag words and pages that need manual or follow-up OCR review.
+
 Recommended first test set:
 
 - 30-50 Russian handwritten samples from different writers;
