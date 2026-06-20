@@ -106,7 +106,15 @@ def main():
             f"Available: {','.join(PROMPT_VARIANTS)}."
         ),
     )
+    parser.add_argument(
+        "--repeats",
+        type=int,
+        default=1,
+        help="Number of repeated runs for each image/provider/variant/prompt combination.",
+    )
     args = parser.parse_args()
+    if args.repeats < 1:
+        parser.error("--repeats must be 1 or greater")
 
     load_dotenv()
     config = {
@@ -131,56 +139,58 @@ def main():
         for variant_name, candidate_path in candidates:
             for provider in providers:
                 for prompt_name, prompt_text in get_provider_prompts(provider, prompt_variant_names):
-                    run_config = dict(config)
-                    if prompt_text:
-                        run_config["VLM_OCR_PROMPT"] = prompt_text
+                    for repeat_index in range(1, args.repeats + 1):
+                        run_config = dict(config)
+                        if prompt_text:
+                            run_config["VLM_OCR_PROMPT"] = prompt_text
 
-                    started_at = time.perf_counter()
-                    error = ""
-                    recognized = ""
-                    metadata = {}
-                    error_analysis = {}
+                        started_at = time.perf_counter()
+                        error = ""
+                        recognized = ""
+                        metadata = {}
+                        error_analysis = {}
 
-                    try:
-                        result = run_ocr(str(candidate_path), run_config, provider)
-                        recognized = result.text
-                        metadata = result.metadata
-                        elapsed = result.elapsed_seconds
-                        error_analysis = analyze_ocr_errors(expected, recognized)
-                    except Exception as exc:
-                        elapsed = time.perf_counter() - started_at
-                        error = str(exc)
+                        try:
+                            result = run_ocr(str(candidate_path), run_config, provider)
+                            recognized = result.text
+                            metadata = result.metadata
+                            elapsed = result.elapsed_seconds
+                            error_analysis = analyze_ocr_errors(expected, recognized)
+                        except Exception as exc:
+                            elapsed = time.perf_counter() - started_at
+                            error = str(exc)
 
-                    rows.append({
-                        "image": image_path.name,
-                        "source_image": str(candidate_path),
-                        "variant": variant_name,
-                        "prompt_variant": prompt_name,
-                        "provider": provider,
-                        "cer": cer(expected, recognized) if not error else "",
-                        "wer": wer(expected, recognized) if not error else "",
-                        "normalized_cer": (
-                            cer(normalize_for_text_comparison(expected), normalize_for_text_comparison(recognized))
-                            if not error else ""
-                        ),
-                        "normalized_wer": (
-                            wer(normalize_for_text_comparison(expected), normalize_for_text_comparison(recognized))
-                            if not error else ""
-                        ),
-                        "elapsed_seconds": round(elapsed, 3),
-                        "expected_chars": len(expected),
-                        "recognized_chars": len(recognized),
-                        "word_substitutions_count": error_analysis.get("word_substitutions_count", ""),
-                        "missing_words_count": error_analysis.get("missing_words_count", ""),
-                        "extra_words_count": error_analysis.get("extra_words_count", ""),
-                        "punctuation_delta_count": error_analysis.get("punctuation_delta_count", ""),
-                        "line_break_delta": error_analysis.get("line_break_delta", ""),
-                        "hyphenated_line_breaks": error_analysis.get("hyphenated_line_breaks", ""),
-                        "error": error,
-                        "recognized_text": recognized,
-                        "error_analysis": json.dumps(error_analysis, ensure_ascii=False),
-                        "metadata": json.dumps(metadata, ensure_ascii=False),
-                    })
+                        rows.append({
+                            "image": image_path.name,
+                            "source_image": str(candidate_path),
+                            "variant": variant_name,
+                            "prompt_variant": prompt_name,
+                            "repeat_index": repeat_index,
+                            "provider": provider,
+                            "cer": cer(expected, recognized) if not error else "",
+                            "wer": wer(expected, recognized) if not error else "",
+                            "normalized_cer": (
+                                cer(normalize_for_text_comparison(expected), normalize_for_text_comparison(recognized))
+                                if not error else ""
+                            ),
+                            "normalized_wer": (
+                                wer(normalize_for_text_comparison(expected), normalize_for_text_comparison(recognized))
+                                if not error else ""
+                            ),
+                            "elapsed_seconds": round(elapsed, 3),
+                            "expected_chars": len(expected),
+                            "recognized_chars": len(recognized),
+                            "word_substitutions_count": error_analysis.get("word_substitutions_count", ""),
+                            "missing_words_count": error_analysis.get("missing_words_count", ""),
+                            "extra_words_count": error_analysis.get("extra_words_count", ""),
+                            "punctuation_delta_count": error_analysis.get("punctuation_delta_count", ""),
+                            "line_break_delta": error_analysis.get("line_break_delta", ""),
+                            "hyphenated_line_breaks": error_analysis.get("hyphenated_line_breaks", ""),
+                            "error": error,
+                            "recognized_text": recognized,
+                            "error_analysis": json.dumps(error_analysis, ensure_ascii=False),
+                            "metadata": json.dumps(metadata, ensure_ascii=False),
+                        })
 
     write_csv(Path(args.output), rows)
     if args.analysis_output:
@@ -271,6 +281,7 @@ def write_csv(path: Path, rows: list[dict]):
         "source_image",
         "variant",
         "prompt_variant",
+        "repeat_index",
         "provider",
         "cer",
         "wer",
@@ -317,15 +328,16 @@ def write_markdown_report(path: Path, rows: list[dict]):
         "",
         "# Runs",
         "",
-        "| Image | Variant | Prompt | Provider | CER | WER | Norm. CER | Norm. WER | Subst. | Missing | Extra | Punct. delta | Hyphen breaks |",
-        "| --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Image | Variant | Prompt | Repeat | Provider | CER | WER | Norm. CER | Norm. WER | Subst. | Missing | Extra | Punct. delta | Hyphen breaks |",
+        "| --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ])
     for row in sorted_rows:
         lines.append(
-            "| {image} | {variant} | {prompt} | {provider} | {cer:.3f} | {wer:.3f} | {norm_cer:.3f} | {norm_wer:.3f} | {subs} | {missing} | {extra} | {punct} | {hyphen} |".format(
+            "| {image} | {variant} | {prompt} | {repeat} | {provider} | {cer:.3f} | {wer:.3f} | {norm_cer:.3f} | {norm_wer:.3f} | {subs} | {missing} | {extra} | {punct} | {hyphen} |".format(
                 image=row["image"],
                 variant=row["variant"],
                 prompt=row["prompt_variant"],
+                repeat=row["repeat_index"],
                 provider=row["provider"],
                 cer=float(row["cer"]),
                 wer=float(row["wer"]),
@@ -343,7 +355,7 @@ def write_markdown_report(path: Path, rows: list[dict]):
         analysis = json.loads(row["error_analysis"] or "{}")
         lines.extend([
             "",
-            f"## {row['image']} / {row['variant']} / {row['prompt_variant']} / {row['provider']}",
+            f"## {row['image']} / {row['variant']} / {row['prompt_variant']} / repeat {row['repeat_index']} / {row['provider']}",
             "",
             f"- CER: {float(row['cer']):.3f}",
             f"- WER: {float(row['wer']):.3f}",
@@ -379,7 +391,7 @@ def write_markdown_report(path: Path, rows: list[dict]):
         lines.extend(["", "# Failed Runs", ""])
         for row in failed_rows:
             lines.append(
-                f"- {row['image']} / {row['variant']} / {row['prompt_variant']} / {row['provider']}: {row['error']}"
+                f"- {row['image']} / {row['variant']} / {row['prompt_variant']} / repeat {row['repeat_index']} / {row['provider']}: {row['error']}"
             )
 
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -405,6 +417,9 @@ def build_aggregate_report(rows: list[dict]) -> list[str]:
             "wer": average_float(group_rows, "wer"),
             "normalized_cer": average_float(group_rows, "normalized_cer"),
             "normalized_wer": average_float(group_rows, "normalized_wer"),
+            "normalized_cer_min": min_float(group_rows, "normalized_cer"),
+            "normalized_cer_max": max_float(group_rows, "normalized_cer"),
+            "normalized_cer_std": std_float(group_rows, "normalized_cer"),
             "word_substitutions_count": average_float(group_rows, "word_substitutions_count"),
             "missing_words_count": average_float(group_rows, "missing_words_count"),
             "extra_words_count": average_float(group_rows, "extra_words_count"),
@@ -415,12 +430,12 @@ def build_aggregate_report(rows: list[dict]) -> list[str]:
     lines = [
         "## Aggregate Results",
         "",
-        "| Provider | Variant | Prompt | Runs | Avg CER | Avg WER | Avg Norm. CER | Avg Norm. WER | Avg Subst. | Avg Missing | Avg Extra | Avg Time |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Provider | Variant | Prompt | Runs | Avg CER | Avg WER | Avg Norm. CER | Norm. CER min | Norm. CER max | Norm. CER std | Avg Norm. WER | Avg Subst. | Avg Missing | Avg Extra | Avg Time |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in aggregate_rows:
         lines.append(
-            "| {provider} | {variant} | {prompt} | {count} | {cer:.3f} | {wer:.3f} | {norm_cer:.3f} | {norm_wer:.3f} | {subs:.2f} | {missing:.2f} | {extra:.2f} | {time:.3f}s |".format(
+            "| {provider} | {variant} | {prompt} | {count} | {cer:.3f} | {wer:.3f} | {norm_cer:.3f} | {norm_cer_min:.3f} | {norm_cer_max:.3f} | {norm_cer_std:.3f} | {norm_wer:.3f} | {subs:.2f} | {missing:.2f} | {extra:.2f} | {time:.3f}s |".format(
                 provider=row["provider"],
                 variant=row["variant"],
                 prompt=row["prompt"],
@@ -428,6 +443,9 @@ def build_aggregate_report(rows: list[dict]) -> list[str]:
                 cer=row["cer"],
                 wer=row["wer"],
                 norm_cer=row["normalized_cer"],
+                norm_cer_min=row["normalized_cer_min"],
+                norm_cer_max=row["normalized_cer_max"],
+                norm_cer_std=row["normalized_cer_std"],
                 norm_wer=row["normalized_wer"],
                 subs=row["word_substitutions_count"],
                 missing=row["missing_words_count"],
@@ -441,6 +459,26 @@ def build_aggregate_report(rows: list[dict]) -> list[str]:
 def average_float(rows: list[dict], key: str) -> float:
     values = [float(row[key]) for row in rows if row.get(key) not in {"", None}]
     return sum(values) / len(values) if values else 0.0
+
+
+def min_float(rows: list[dict], key: str) -> float:
+    values = [float(row[key]) for row in rows if row.get(key) not in {"", None}]
+    return min(values) if values else 0.0
+
+
+def max_float(rows: list[dict], key: str) -> float:
+    values = [float(row[key]) for row in rows if row.get(key) not in {"", None}]
+    return max(values) if values else 0.0
+
+
+def std_float(rows: list[dict], key: str) -> float:
+    values = [float(row[key]) for row in rows if row.get(key) not in {"", None}]
+    if len(values) < 2:
+        return 0.0
+
+    average = sum(values) / len(values)
+    variance = sum((value - average) ** 2 for value in values) / len(values)
+    return variance ** 0.5
 
 
 if __name__ == "__main__":

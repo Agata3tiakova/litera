@@ -136,6 +136,21 @@ python scripts/ocr_benchmark.py ^
 Prompt variants are applied only to VLM providers. Classic OCR providers use their normal settings.
 OpenRouter requests are retried on temporary rate limits and server errors. Tune `OPENROUTER_MAX_RETRIES` and `OPENROUTER_RETRY_DELAY` in `.env` if prompt/model sweeps hit provider limits.
 
+To measure model stability, repeat each run:
+
+```bash
+python scripts/ocr_benchmark.py ^
+  --images data/ocr/images ^
+  --ground-truth data/ocr/ground_truth ^
+  --providers qwen25_vl_72b ^
+  --keep-original ^
+  --repeats 3 ^
+  --output tmp/ocr_repeated_benchmark.csv ^
+  --analysis-output tmp/ocr_repeated_benchmark.md
+```
+
+Repeated reports include `repeat_index` in CSV and aggregate min/max/std values for normalized CER in Markdown.
+
 Recommended first test set:
 
 - 30-50 Russian handwritten samples from different writers;
