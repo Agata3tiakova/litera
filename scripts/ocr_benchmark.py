@@ -62,7 +62,12 @@ def main():
     parser.add_argument(
         "--ground-truth",
         required=True,
-        help="Directory with .txt files matching image stems.",
+        help="Directory with .txt files matching image stems. Use student text for OCR benchmarking.",
+    )
+    parser.add_argument(
+        "--clean-ground-truth",
+        default="",
+        help="Optional directory with corrected .txt files for secondary clean-text comparison.",
     )
     parser.add_argument(
         "--providers",
@@ -125,6 +130,7 @@ def main():
     providers = [p.strip() for p in args.providers.split(",") if p.strip()]
     variant_names = [v.strip() for v in args.variants.split(",") if v.strip()]
     prompt_variant_names = [p.strip() for p in args.prompt_variants.split(",") if p.strip()]
+    clean_ground_truth_dir = Path(args.clean_ground_truth) if args.clean_ground_truth else None
 
     rows = []
     for image_path in iter_images(Path(args.images)):
@@ -134,6 +140,7 @@ def main():
             continue
 
         expected = gt_path.read_text(encoding="utf-8").strip()
+        clean_expected = read_optional_ground_truth(clean_ground_truth_dir, image_path.stem)
         candidates = get_candidate_images(image_path, args, variant_names)
 
         for variant_name, candidate_path in candidates:
@@ -177,6 +184,22 @@ def main():
                                 wer(normalize_for_text_comparison(expected), normalize_for_text_comparison(recognized))
                                 if not error else ""
                             ),
+                            "clean_cer": cer(clean_expected, recognized) if clean_expected and not error else "",
+                            "clean_wer": wer(clean_expected, recognized) if clean_expected and not error else "",
+                            "clean_normalized_cer": (
+                                cer(
+                                    normalize_for_text_comparison(clean_expected),
+                                    normalize_for_text_comparison(recognized),
+                                )
+                                if clean_expected and not error else ""
+                            ),
+                            "clean_normalized_wer": (
+                                wer(
+                                    normalize_for_text_comparison(clean_expected),
+                                    normalize_for_text_comparison(recognized),
+                                )
+                                if clean_expected and not error else ""
+                            ),
                             "elapsed_seconds": round(elapsed, 3),
                             "expected_chars": len(expected),
                             "recognized_chars": len(recognized),
@@ -211,6 +234,16 @@ def make_preprocessed_copy(image_path: Path) -> Path:
     output_path.write_bytes(image_path.read_bytes())
     preprocess_image(str(output_path))
     return output_path
+
+
+def read_optional_ground_truth(directory: Path | None, stem: str) -> str:
+    if directory is None:
+        return ""
+
+    path = directory / f"{stem}.txt"
+    if not path.exists():
+        return ""
+    return path.read_text(encoding="utf-8").strip()
 
 
 def get_candidate_images(
@@ -287,6 +320,10 @@ def write_csv(path: Path, rows: list[dict]):
         "wer",
         "normalized_cer",
         "normalized_wer",
+        "clean_cer",
+        "clean_wer",
+        "clean_normalized_cer",
+        "clean_normalized_wer",
         "elapsed_seconds",
         "expected_chars",
         "recognized_chars",
@@ -361,6 +398,8 @@ def write_markdown_report(path: Path, rows: list[dict]):
             f"- WER: {float(row['wer']):.3f}",
             f"- Normalized CER: {float(row['normalized_cer']):.3f}",
             f"- Normalized WER: {float(row['normalized_wer']):.3f}",
+            f"- Clean normalized CER: {format_row_optional_float(row, 'clean_normalized_cer')}",
+            f"- Clean normalized WER: {format_row_optional_float(row, 'clean_normalized_wer')}",
             f"- Word substitutions: {row['word_substitutions_count']}",
             f"- Missing words: {row['missing_words_count']}",
             f"- Extra words: {row['extra_words_count']}",
@@ -420,6 +459,8 @@ def build_aggregate_report(rows: list[dict]) -> list[str]:
             "normalized_cer_min": min_float(group_rows, "normalized_cer"),
             "normalized_cer_max": max_float(group_rows, "normalized_cer"),
             "normalized_cer_std": std_float(group_rows, "normalized_cer"),
+            "clean_normalized_cer": average_optional_float(group_rows, "clean_normalized_cer"),
+            "clean_normalized_wer": average_optional_float(group_rows, "clean_normalized_wer"),
             "word_substitutions_count": average_float(group_rows, "word_substitutions_count"),
             "missing_words_count": average_float(group_rows, "missing_words_count"),
             "extra_words_count": average_float(group_rows, "extra_words_count"),
@@ -430,12 +471,12 @@ def build_aggregate_report(rows: list[dict]) -> list[str]:
     lines = [
         "## Aggregate Results",
         "",
-        "| Provider | Variant | Prompt | Runs | Avg CER | Avg WER | Avg Norm. CER | Norm. CER min | Norm. CER max | Norm. CER std | Avg Norm. WER | Avg Subst. | Avg Missing | Avg Extra | Avg Time |",
-        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+        "| Provider | Variant | Prompt | Runs | Avg CER | Avg WER | Avg Norm. CER | Norm. CER min | Norm. CER max | Norm. CER std | Avg Norm. WER | Avg Clean Norm. CER | Avg Clean Norm. WER | Avg Subst. | Avg Missing | Avg Extra | Avg Time |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ]
     for row in aggregate_rows:
         lines.append(
-            "| {provider} | {variant} | {prompt} | {count} | {cer:.3f} | {wer:.3f} | {norm_cer:.3f} | {norm_cer_min:.3f} | {norm_cer_max:.3f} | {norm_cer_std:.3f} | {norm_wer:.3f} | {subs:.2f} | {missing:.2f} | {extra:.2f} | {time:.3f}s |".format(
+            "| {provider} | {variant} | {prompt} | {count} | {cer:.3f} | {wer:.3f} | {norm_cer:.3f} | {norm_cer_min:.3f} | {norm_cer_max:.3f} | {norm_cer_std:.3f} | {norm_wer:.3f} | {clean_norm_cer} | {clean_norm_wer} | {subs:.2f} | {missing:.2f} | {extra:.2f} | {time:.3f}s |".format(
                 provider=row["provider"],
                 variant=row["variant"],
                 prompt=row["prompt"],
@@ -447,6 +488,8 @@ def build_aggregate_report(rows: list[dict]) -> list[str]:
                 norm_cer_max=row["normalized_cer_max"],
                 norm_cer_std=row["normalized_cer_std"],
                 norm_wer=row["normalized_wer"],
+                clean_norm_cer=format_optional_float(row["clean_normalized_cer"]),
+                clean_norm_wer=format_optional_float(row["clean_normalized_wer"]),
                 subs=row["word_substitutions_count"],
                 missing=row["missing_words_count"],
                 extra=row["extra_words_count"],
@@ -459,6 +502,20 @@ def build_aggregate_report(rows: list[dict]) -> list[str]:
 def average_float(rows: list[dict], key: str) -> float:
     values = [float(row[key]) for row in rows if row.get(key) not in {"", None}]
     return sum(values) / len(values) if values else 0.0
+
+
+def average_optional_float(rows: list[dict], key: str) -> float | None:
+    values = [float(row[key]) for row in rows if row.get(key) not in {"", None}]
+    return sum(values) / len(values) if values else None
+
+
+def format_optional_float(value: float | None) -> str:
+    return "" if value is None else f"{value:.3f}"
+
+
+def format_row_optional_float(row: dict, key: str) -> str:
+    value = row.get(key)
+    return "" if value in {"", None} else f"{float(value):.3f}"
 
 
 def min_float(rows: list[dict], key: str) -> float:

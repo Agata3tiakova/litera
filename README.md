@@ -80,26 +80,31 @@ Prepare a dataset with matching image and text files:
 
 ```text
 data/ocr/images/sample_001.jpg
-data/ocr/ground_truth/sample_001.txt
+data/ocr/student_text/sample_001.txt
+data/ocr/correct_text/sample_001.txt
 ```
+
+Use `student_text` as the primary OCR reference: it should preserve what the student actually wrote, including spelling and punctuation mistakes. Use `correct_text` only as an optional clean reference.
 
 Run a benchmark:
 
 ```bash
 python scripts/ocr_benchmark.py ^
   --images data/ocr/images ^
-  --ground-truth data/ocr/ground_truth ^
+  --ground-truth data/ocr/student_text ^
+  --clean-ground-truth data/ocr/correct_text ^
   --providers yandex,tesseract,easyocr,trocr,qwen25_vl_7b,gemma3_vision,minicpm_v,florence2
 ```
 
-The script writes a CSV report with recognized text, runtime, CER, and WER for each provider.
+The script writes a CSV report with recognized text, runtime, CER, and WER for each provider. Main CER/WER metrics compare OCR output with `student_text`. `clean_*` metrics compare the same OCR output with `correct_text` when provided.
 
 To compare preprocessing strategies, pass image variants explicitly:
 
 ```bash
 python scripts/ocr_benchmark.py ^
   --images data/ocr/images ^
-  --ground-truth data/ocr/ground_truth ^
+  --ground-truth data/ocr/student_text ^
+  --clean-ground-truth data/ocr/correct_text ^
   --providers yandex,qwen25_vl_72b,gemma3_vision,tesseract ^
   --keep-original ^
   --variants original,grayscale_soft,contrast,denoise,deskew,line_removed,otsu_binary ^
@@ -124,7 +129,7 @@ For VLM providers, you can compare transcription prompts:
 ```bash
 python scripts/ocr_benchmark.py ^
   --images data/ocr/images ^
-  --ground-truth data/ocr/ground_truth ^
+  --ground-truth data/ocr/student_text ^
   --providers qwen25_vl_72b,gemma3_vision ^
   --keep-original ^
   --variants original ^
@@ -141,7 +146,7 @@ To measure model stability, repeat each run:
 ```bash
 python scripts/ocr_benchmark.py ^
   --images data/ocr/images ^
-  --ground-truth data/ocr/ground_truth ^
+  --ground-truth data/ocr/student_text ^
   --providers qwen25_vl_72b ^
   --keep-original ^
   --repeats 3 ^
