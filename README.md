@@ -168,6 +168,17 @@ python scripts/ocr_ensemble.py ^
 
 The ensemble script uses the best provider as the base text, weights other providers by observed normalized CER, keeps text where stronger models agree, and writes `word_confidence.csv` to flag words and pages that need manual or follow-up OCR review.
 
+To turn word confidence into second-pass OCR tasks:
+
+```bash
+python scripts/ocr_followup_tasks.py ^
+  --confidence tmp/ocr_ensemble/word_confidence.csv ^
+  --output tmp/ocr_followup_tasks.md ^
+  --rerun-list tmp/ocr_rerun_images.txt
+```
+
+The follow-up report groups low-confidence words by image and recommends whether to rerun the full page or review only listed words.
+
 Recommended first test set:
 
 - 30-50 Russian handwritten samples from different writers;
