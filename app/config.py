@@ -27,6 +27,16 @@ class Config:
     EASYOCR_GPU = os.getenv("EASYOCR_GPU", "false")
 
     TROCR_MODEL = os.getenv("TROCR_MODEL", "microsoft/trocr-base-handwritten")
+    TROCR_DEVICE = os.getenv("TROCR_DEVICE", "auto")
+    TROCR_MAX_NEW_TOKENS = os.getenv("TROCR_MAX_NEW_TOKENS", "128")
+    TROCR_SEGMENT_LINES = os.getenv("TROCR_SEGMENT_LINES", "false")
+    CYRILLIC_TROCR_MODEL = os.getenv(
+        "CYRILLIC_TROCR_MODEL",
+        "cyrillic-trocr/trocr-handwritten-cyrillic",
+    )
+    CYRILLIC_TROCR_DEVICE = os.getenv("CYRILLIC_TROCR_DEVICE", "auto")
+    CYRILLIC_TROCR_MAX_NEW_TOKENS = os.getenv("CYRILLIC_TROCR_MAX_NEW_TOKENS", "96")
+    CYRILLIC_TROCR_SEGMENT_LINES = os.getenv("CYRILLIC_TROCR_SEGMENT_LINES", "true")
 
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
     OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")

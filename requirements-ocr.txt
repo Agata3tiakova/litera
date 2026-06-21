@@ -4,6 +4,8 @@
 pytesseract
 easyocr
 transformers
+# For local TrOCR on NVIDIA GPUs, install the CUDA PyTorch build from the official
+# PyTorch index instead of the default CPU-only wheel when needed.
 torch
 torchvision
 accelerate

@@ -30,6 +30,7 @@ The app uses `OCR_PROVIDER=yandex` by default. OCR engines are implemented as in
 - `tesseract` - local Tesseract via `pytesseract`;
 - `easyocr` - local EasyOCR with Russian and English languages;
 - `trocr` - Hugging Face TrOCR model interface;
+- `cyrillic_trocr` - Hugging Face TrOCR model fine-tuned for Cyrillic handwriting;
 - `qwen25_vl_7b` - Qwen2.5-VL 7B via OpenRouter-compatible chat completions;
 - `qwen25_vl_32b` - Qwen2.5-VL 32B via OpenRouter-compatible chat completions;
 - `qwen25_vl_72b` - Qwen2.5-VL 72B via OpenRouter-compatible chat completions;
@@ -38,7 +39,7 @@ The app uses `OCR_PROVIDER=yandex` by default. OCR engines are implemented as in
 - `minicpm_v` - MiniCPM-V via OpenRouter-compatible chat completions;
 - `florence2` - local Microsoft Florence-2 through Hugging Face Transformers.
 
-For Russian handwritten text, Yandex and other cloud OCR systems are good baselines to benchmark first. EasyOCR is a useful local baseline with Cyrillic support, but should be measured on your own handwriting samples. TrOCR is included for experimentation, but the default public handwritten model is not Russian-specific; it will likely need a Cyrillic or project-specific fine-tuned model.
+For Russian handwritten text, Yandex and other cloud OCR systems are good baselines to benchmark first. EasyOCR is a useful local baseline with Cyrillic support, but should be measured on your own handwriting samples. The default `trocr` model is not Russian-specific; `cyrillic_trocr` uses `cyrillic-trocr/trocr-handwritten-cyrillic`, a Cyrillic handwriting checkpoint for Russian, Ukrainian, and Church Slavonic. The Cyrillic TrOCR provider segments pages into line crops by default because TrOCR checkpoints are trained for line-level recognition, not full-page transcription.
 
 The VLM providers are not classic OCR engines. They send the image with this prompt by default:
 
@@ -93,10 +94,23 @@ python scripts/ocr_benchmark.py ^
   --images data/ocr/images ^
   --ground-truth data/ocr/student_text ^
   --clean-ground-truth data/ocr/correct_text ^
-  --providers yandex,tesseract,easyocr,trocr,qwen25_vl_7b,gemma3_vision,minicpm_v,florence2
+  --providers yandex,tesseract,easyocr,trocr,cyrillic_trocr,qwen25_vl_7b,gemma3_vision,minicpm_v,florence2
 ```
 
 The script writes a CSV report with recognized text, runtime, CER, and WER for each provider. Main CER/WER metrics compare OCR output with `student_text`. `clean_*` metrics compare the same OCR output with `correct_text` when provided.
+
+For `cyrillic_trocr`, use a CUDA-enabled PyTorch build when possible. The provider defaults to `CYRILLIC_TROCR_SEGMENT_LINES=true`, recognizes line crops separately, and joins them with line breaks:
+
+```bash
+python scripts/ocr_benchmark.py ^
+  --images data/ocr/images ^
+  --ground-truth data/ocr/student_text ^
+  --clean-ground-truth data/ocr/correct_text ^
+  --providers cyrillic_trocr ^
+  --keep-original ^
+  --output tmp/ocr_cyrillic_trocr_results.csv ^
+  --analysis-output tmp/ocr_cyrillic_trocr_analysis.md
+```
 
 To compare preprocessing strategies, pass image variants explicitly:
 
@@ -196,6 +210,7 @@ Suggested research table:
 | `easyocr` | OCR |  |  |  |  |
 | `yandex` | OCR API |  |  |  |  |
 | `trocr` | Transformer OCR |  |  |  |  |
+| `cyrillic_trocr` | Transformer OCR |  |  |  |  |
 | `qwen25_vl_7b` | VLM |  |  |  |  |
 | `qwen25_vl_32b` | VLM |  |  |  |  |
 | `qwen25_vl_72b` | VLM |  |  |  |  |
