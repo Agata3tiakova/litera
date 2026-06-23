@@ -219,6 +219,19 @@ Suggested research table:
 | `minicpm_v` | VLM |  |  |  |  |
 | `florence2` | VLM / document understanding |  |  |  |  |
 
+Current 9-sample Russian handwriting benchmark, using student text as the primary reference:
+
+| Provider | Type | Avg normalized CER | Avg normalized WER | Avg time |
+| --- | --- | ---: | ---: | ---: |
+| `qwen25_vl_72b` | VLM | 0.133 | 0.277 | 6.129s |
+| `gemma3_vision` | VLM | 0.271 | 0.484 | 4.006s |
+| `cyrillic_trocr` | Transformer OCR | 0.686 | 0.958 | 296.509s |
+| `easyocr` | OCR | 0.883 | 1.133 | 17.974s |
+| `tesseract` | OCR | 0.962 | 1.455 | 3.013s |
+| `trocr` | Transformer OCR | 0.978 | 1.000 | 5.780s |
+
+On this sample, `cyrillic_trocr` improves over the generic TrOCR baseline, but it often produces Church Slavonic-like tokens and remains much weaker than the VLM providers. Its result should be treated as a line-level OCR baseline, not as a leading candidate for the current full-page school handwriting task.
+
 For the educational task, evaluate two layers separately:
 
 - OCR/VLM to text: CER, WER, speed, and cost;
