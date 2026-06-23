@@ -193,6 +193,19 @@ python scripts/ocr_followup_tasks.py ^
 
 The follow-up report groups low-confidence words by image and recommends whether to rerun the full page or review only listed words.
 
+To measure whether OCR preserves real student mistakes instead of silently correcting them, reuse existing benchmark CSV files:
+
+```bash
+python scripts/ocr_student_mistake_preservation.py ^
+  --benchmarks tmp/ocr_test_014_final_working_9of9/working_models_dual_ref.csv,tmp/ocr_test_018_yandex_9sample/yandex_dual_ref.csv,tmp/ocr_test_017_cyrillic_trocr/cyrillic_trocr_dual_ref.csv ^
+  --student-text data/ocr/student_text ^
+  --correct-text data/ocr/correct_text ^
+  --output tmp/ocr_student_mistake_preservation.csv ^
+  --report tmp/ocr_student_mistake_preservation.md
+```
+
+This analysis does not run OCR again. It compares `student_text` with `correct_text`, finds real student-vs-correct differences, and checks whether each OCR output preserved the student variant, corrected it, or lost the word.
+
 Recommended first test set:
 
 - 30-50 Russian handwritten samples from different writers;
@@ -240,7 +253,22 @@ Research progress so far:
 - tested preprocessing variants and found that they do not reliably improve strong OCR/VLM providers on the current samples;
 - added repeated runs and confidence/ensemble reports to identify pages that need targeted reruns;
 - added `cyrillic_trocr` with line segmentation as a Cyrillic Transformer OCR baseline;
-- added the paid `yandex` 9-sample run to compare cloud OCR against local OCR and VLM providers on the same dataset.
+- added the paid `yandex` 9-sample run to compare cloud OCR against local OCR and VLM providers on the same dataset;
+- added a student-mistake preservation metric to separate raw OCR accuracy from whether the system keeps the student's actual spelling mistakes.
+
+Student mistake preservation on the current 9-sample set:
+
+| Provider | Checked mistakes | Preserved | Corrected | Lost | Preservation rate | Correction rate |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `yandex` | 47 | 12 | 10 | 25 | 0.255 | 0.213 |
+| `cyrillic_trocr` | 47 | 9 | 0 | 38 | 0.191 | 0.000 |
+| `qwen25_vl_72b` | 47 | 3 | 28 | 16 | 0.064 | 0.596 |
+| `gemma3_vision` | 47 | 2 | 21 | 24 | 0.043 | 0.447 |
+| `tesseract` | 47 | 1 | 0 | 46 | 0.021 | 0.000 |
+| `easyocr` | 47 | 0 | 0 | 47 | 0.000 | 0.000 |
+| `trocr` | 47 | 0 | 0 | 47 | 0.000 | 0.000 |
+
+This shows a separate research tradeoff: `qwen25_vl_72b` is best at transcription accuracy, but it often normalizes student mistakes to the clean text. For educational error detection, the next OCR prompt/ensemble step should explicitly optimize mistake preservation, not only CER/WER.
 
 Next research directions:
 
