@@ -208,7 +208,7 @@ Suggested research table:
 | --- | --- | --- | --- | --- | --- |
 | `tesseract` | OCR |  |  |  |  |
 | `easyocr` | OCR |  |  |  |  |
-| `yandex` | OCR API |  |  |  |  |
+| `yandex` | OCR API | 0.056 | 0.171 | 2.912s | Paid API |
 | `trocr` | Transformer OCR |  |  |  |  |
 | `cyrillic_trocr` | Transformer OCR |  |  |  |  |
 | `qwen25_vl_7b` | VLM |  |  |  |  |
@@ -231,6 +231,12 @@ Current 9-sample Russian handwriting benchmark, using student text as the primar
 | `trocr` | Transformer OCR | 0.978 | 1.000 | 5.780s |
 
 On this sample, `cyrillic_trocr` improves over the generic TrOCR baseline, but it often produces Church Slavonic-like tokens and remains much weaker than the VLM providers. Its result should be treated as a line-level OCR baseline, not as a leading candidate for the current full-page school handwriting task.
+
+Earlier one-sample Yandex baseline, kept as part of the research history:
+
+| Provider | Dataset | CER | WER | Time | Notes |
+| --- | --- | ---: | ---: | ---: | --- |
+| `yandex` | first handwritten sample, original image | 0.056 | 0.171 | 2.912s | Strong OCR API baseline; preprocessed variant degraded to CER 0.065 and WER 0.257. |
 
 For the educational task, evaluate two layers separately:
 
