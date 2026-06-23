@@ -154,6 +154,7 @@ python scripts/ocr_benchmark.py ^
 
 Prompt variants are applied only to VLM providers. Classic OCR providers use their normal settings.
 OpenRouter requests are retried on temporary rate limits and server errors. Tune `OPENROUTER_MAX_RETRIES` and `OPENROUTER_RETRY_DELAY` in `.env` if prompt/model sweeps hit provider limits.
+Use `preserve_student_errors_strict` when the experiment is focused on preserving student spelling mistakes rather than maximizing clean-text readability.
 
 To measure model stability, repeat each run:
 
@@ -269,6 +270,8 @@ Student mistake preservation on the current 9-sample set:
 | `trocr` | 47 | 0 | 0 | 47 | 0.000 | 0.000 |
 
 This shows a separate research tradeoff: `qwen25_vl_72b` is best at transcription accuracy, but it often normalizes student mistakes to the clean text. For educational error detection, the next OCR prompt/ensemble step should explicitly optimize mistake preservation, not only CER/WER.
+
+A strict mistake-preservation prompt was added for VLM-only experiments. The first run was incomplete because OpenRouter returned `402 Payment Required` before all pages finished. On the successful subset, `gemma3_vision` improved mistake preservation from 0.043 to 0.182, while `qwen25_vl_72b` did not improve. Treat this as a preliminary result until the full 9/9 rerun is completed.
 
 Next research directions:
 

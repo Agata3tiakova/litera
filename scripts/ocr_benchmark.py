@@ -45,6 +45,16 @@ PROMPT_VARIANTS = {
         "If a word is unclear, output your best literal reading instead of correcting it. "
         "Preserve line breaks. Return only the transcription."
     ),
+    "preserve_student_errors_strict": (
+        "You are transcribing a Russian student's handwritten text for OCR evaluation. "
+        "Your task is literal transcription, not correction. Preserve the student's actual "
+        "spelling mistakes, wrong word forms, missing letters, repeated letters, punctuation "
+        "mistakes, capitalization, line breaks, and hyphenation. Do not normalize words to "
+        "standard Russian. Do not replace a visually written misspelled word with the word "
+        "that would make better sense. If a word looks grammatically wrong, keep it exactly "
+        "as written. If a word is unclear, output the closest visual reading instead of a "
+        "contextual guess. Return only the transcription."
+    ),
 }
 VLM_PROVIDERS = {
     "qwen25_vl_7b",
