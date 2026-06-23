@@ -208,7 +208,7 @@ Suggested research table:
 | --- | --- | --- | --- | --- | --- |
 | `tesseract` | OCR |  |  |  |  |
 | `easyocr` | OCR |  |  |  |  |
-| `yandex` | OCR API | 0.056 | 0.171 | 2.912s | Paid API |
+| `yandex` | OCR API | 0.417 | 0.609 | 2.674s | Paid API |
 | `trocr` | Transformer OCR |  |  |  |  |
 | `cyrillic_trocr` | Transformer OCR |  |  |  |  |
 | `qwen25_vl_7b` | VLM |  |  |  |  |
@@ -225,12 +225,31 @@ Current 9-sample Russian handwriting benchmark, using student text as the primar
 | --- | --- | ---: | ---: | ---: |
 | `qwen25_vl_72b` | VLM | 0.133 | 0.277 | 6.129s |
 | `gemma3_vision` | VLM | 0.271 | 0.484 | 4.006s |
+| `yandex` | OCR API | 0.417 | 0.609 | 2.674s |
 | `cyrillic_trocr` | Transformer OCR | 0.686 | 0.958 | 296.509s |
 | `easyocr` | OCR | 0.883 | 1.133 | 17.974s |
 | `tesseract` | OCR | 0.962 | 1.455 | 3.013s |
 | `trocr` | Transformer OCR | 0.978 | 1.000 | 5.780s |
 
-On this sample, `cyrillic_trocr` improves over the generic TrOCR baseline, but it often produces Church Slavonic-like tokens and remains much weaker than the VLM providers. Its result should be treated as a line-level OCR baseline, not as a leading candidate for the current full-page school handwriting task.
+On this sample, `qwen25_vl_72b` is the strongest model, followed by `gemma3_vision`. `yandex` is the strongest classic OCR/API baseline in the 9-sample run and is faster than the VLM providers, but its error rate is still clearly higher on difficult Russian handwriting. `cyrillic_trocr` improves over the generic TrOCR baseline, but it often produces Church Slavonic-like tokens and remains much weaker than the VLM providers. Its result should be treated as a line-level OCR baseline, not as a leading candidate for the current full-page school handwriting task.
+
+Research progress so far:
+
+- switched the primary OCR metric from corrected text to manually checked `student_text`, preserving student spelling mistakes;
+- kept `correct_text` as a secondary clean-reference metric only;
+- tested preprocessing variants and found that they do not reliably improve strong OCR/VLM providers on the current samples;
+- added repeated runs and confidence/ensemble reports to identify pages that need targeted reruns;
+- added `cyrillic_trocr` with line segmentation as a Cyrillic Transformer OCR baseline;
+- added the paid `yandex` 9-sample run to compare cloud OCR against local OCR and VLM providers on the same dataset.
+
+Next research directions:
+
+- expand the dataset to 30-50 checked Russian handwritten samples with writer/photo-condition labels;
+- rerun only the strongest providers on the larger set first: `qwen25_vl_72b`, `gemma3_vision`, `yandex`, and optionally `cyrillic_trocr` as a line-level baseline;
+- add page-quality metadata such as blur, tilt, contrast, grid type, and handwriting difficulty, then compare metrics by subgroup;
+- improve line/region segmentation for hard pages before testing line-level OCR models again;
+- test targeted second-pass VLM prompts only on low-confidence pages instead of rerunning every image;
+- measure downstream preservation of student mistakes separately from raw OCR CER/WER.
 
 Earlier one-sample Yandex baseline, kept as part of the research history:
 
