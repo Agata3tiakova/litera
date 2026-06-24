@@ -1,6 +1,10 @@
 # Litera
 
-A Flask web application for recognizing handwritten text from an image and analyzing writing quality with AI: spelling, punctuation, style, vocabulary, and short improvement recommendations.
+Litera is a school project: a Flask web application that recognizes a student's handwritten Russian text from an image and then analyzes writing quality with AI: spelling, punctuation, style, vocabulary, and short improvement recommendations.
+
+Russian handwritten text recognition turned out to be the hardest part of the project, especially for school notebook photos. Because of that, the project includes a separate OCR/VLM benchmark and research workflow comparing classic OCR systems, OCR APIs, Transformer OCR models, and vision-language models.
+
+Research report: [OCR Research: Russian Handwritten School Text](docs/ocr_research.md).
 
 ## Features
 
@@ -68,6 +72,8 @@ python run.py
 The application will be available at `http://127.0.0.1:5000`.
 
 ## OCR Benchmark
+
+The full benchmark summary, metrics, OCR vs VLM comparison, and conclusions are documented in [docs/ocr_research.md](docs/ocr_research.md).
 
 Optional OCR dependencies are separated from the main app because they are large:
 
