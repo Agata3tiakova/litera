@@ -226,117 +226,19 @@ python scripts/ocr_preservation_risk_report.py ^
 
 This is a preservation-aware ensemble signal. It does not automatically replace the base OCR text. It flags places where the base provider output looks corrected or lost, while another provider preserved the student spelling.
 
-Recommended first test set:
+## Research Summary
 
-- 30-50 Russian handwritten samples from different writers;
-- the same pages photographed under different lighting conditions;
-- ground truth typed manually in `.txt` files;
-- separate groups for clean scans, phone photos, tilted pages, and low contrast.
+Full metrics, OCR vs VLM comparison, student-mistake preservation analysis, strict prompt results, and conclusions are documented in [docs/ocr_research.md](docs/ocr_research.md).
 
-Use CER to track character-level improvements and WER to track word-level readability.
+Current high-level findings:
 
-Suggested research table:
-
-| Provider | Type | CER | WER | Speed | Cost |
-| --- | --- | --- | --- | --- | --- |
-| `tesseract` | OCR |  |  |  |  |
-| `easyocr` | OCR |  |  |  |  |
-| `yandex` | OCR API | 0.417 | 0.609 | 2.674s | Paid API |
-| `trocr` | Transformer OCR |  |  |  |  |
-| `cyrillic_trocr` | Transformer OCR |  |  |  |  |
-| `qwen25_vl_7b` | VLM |  |  |  |  |
-| `qwen25_vl_32b` | VLM |  |  |  |  |
-| `qwen25_vl_72b` | VLM |  |  |  |  |
-| `gemma3_vision` | VLM |  |  |  |  |
-| `internvl` | VLM |  |  |  |  |
-| `minicpm_v` | VLM |  |  |  |  |
-| `florence2` | VLM / document understanding |  |  |  |  |
-
-Current 9-sample Russian handwriting benchmark, using student text as the primary reference:
-
-| Provider | Type | Avg normalized CER | Avg normalized WER | Avg time |
-| --- | --- | ---: | ---: | ---: |
-| `qwen25_vl_72b` | VLM | 0.133 | 0.277 | 6.129s |
-| `gemma3_vision` | VLM | 0.271 | 0.484 | 4.006s |
-| `yandex` | OCR API | 0.417 | 0.609 | 2.674s |
-| `cyrillic_trocr` | Transformer OCR | 0.686 | 0.958 | 296.509s |
-| `easyocr` | OCR | 0.883 | 1.133 | 17.974s |
-| `tesseract` | OCR | 0.962 | 1.455 | 3.013s |
-| `trocr` | Transformer OCR | 0.978 | 1.000 | 5.780s |
-
-On this sample, `qwen25_vl_72b` is the strongest model, followed by `gemma3_vision`. `yandex` is the strongest classic OCR/API baseline in the 9-sample run and is faster than the VLM providers, but its error rate is still clearly higher on difficult Russian handwriting. `cyrillic_trocr` improves over the generic TrOCR baseline, but it often produces Church Slavonic-like tokens and remains much weaker than the VLM providers. Its result should be treated as a line-level OCR baseline, not as a leading candidate for the current full-page school handwriting task.
-
-Research progress so far:
-
-- switched the primary OCR metric from corrected text to manually checked `student_text`, preserving student spelling mistakes;
-- kept `correct_text` as a secondary clean-reference metric only;
-- tested preprocessing variants and found that they do not reliably improve strong OCR/VLM providers on the current samples;
-- added repeated runs and confidence/ensemble reports to identify pages that need targeted reruns;
-- added `cyrillic_trocr` with line segmentation as a Cyrillic Transformer OCR baseline;
-- added the paid `yandex` 9-sample run to compare cloud OCR against local OCR and VLM providers on the same dataset;
-- added a student-mistake preservation metric to separate raw OCR accuracy from whether the system keeps the student's actual spelling mistakes.
-
-Student mistake preservation on the current 9-sample set:
-
-| Provider | Checked mistakes | Preserved | Corrected | Lost | Preservation rate | Correction rate |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `yandex` | 47 | 12 | 10 | 25 | 0.255 | 0.213 |
-| `cyrillic_trocr` | 47 | 9 | 0 | 38 | 0.191 | 0.000 |
-| `qwen25_vl_72b` | 47 | 3 | 28 | 16 | 0.064 | 0.596 |
-| `gemma3_vision` | 47 | 2 | 21 | 24 | 0.043 | 0.447 |
-| `tesseract` | 47 | 1 | 0 | 46 | 0.021 | 0.000 |
-| `easyocr` | 47 | 0 | 0 | 47 | 0.000 | 0.000 |
-| `trocr` | 47 | 0 | 0 | 47 | 0.000 | 0.000 |
-
-This shows a separate research tradeoff: `qwen25_vl_72b` is best at transcription accuracy, but it often normalizes student mistakes to the clean text. For educational error detection, the next OCR prompt/ensemble step should explicitly optimize mistake preservation, not only CER/WER.
-
-Strict VLM prompt results on the same 9-sample set:
-
-| Provider | Prompt | Avg Norm CER | Avg Norm WER | Preserved mistakes | Corrected mistakes | Preservation rate | Correction rate |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `qwen25_vl_72b` | default | 0.133 | 0.277 | 3 | 28 | 0.064 | 0.596 |
-| `qwen25_vl_72b` | `preserve_student_errors_strict` | 0.109 | 0.290 | 8 | 20 | 0.170 | 0.426 |
-| `gemma3_vision` | default | 0.271 | 0.484 | 2 | 21 | 0.043 | 0.447 |
-| `gemma3_vision` | `preserve_student_errors_strict` | 0.207 | 0.391 | 8 | 14 | 0.170 | 0.298 |
-
-The strict prompt improved mistake preservation for both VLM providers and also improved normalized CER. It should be treated as the preferred VLM prompt for the educational OCR task, with the caveat that Qwen's normalized WER rose slightly and both models became slower.
-
-Preservation-aware risk report for `qwen25_vl_72b`:
-
-| Risk status | Count | Meaning |
-| --- | ---: | --- |
-| `probable_base_correction_no_support` | 16 | Qwen used the clean variant; no support provider preserved the student variant. |
-| `probable_base_correction_with_preservation_support` | 12 | Qwen used the clean variant; at least one support provider preserved the student variant. |
-| `base_lost_but_support_preserved` | 3 | Qwen lost the place; another provider preserved the student variant. |
-| `base_preserved_student_mistake` | 3 | Qwen preserved the student variant. |
-| `base_lost_no_signal` | 12 | No useful provider signal. |
-| `base_lost_support_corrected` | 1 | Qwen lost the place; a support provider used the clean variant. |
-
-The practical rule is to keep `qwen25_vl_72b` as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the current set, this gives 15 targeted places for review instead of manually reviewing all 47 student-vs-correct differences.
-
-A strict mistake-preservation prompt was added for VLM-only experiments and completed successfully for `qwen25_vl_72b` and `gemma3_vision` on the 9-sample set. It reduced silent correction of student mistakes and improved normalized CER for both models.
-
-Next research directions:
-
-- expand the dataset to 30-50 checked Russian handwritten samples with writer/photo-condition labels;
-- rerun only the strongest providers on the larger set first: `qwen25_vl_72b`, `gemma3_vision`, `yandex`, and optionally `cyrillic_trocr` as a line-level baseline;
-- add page-quality metadata such as blur, tilt, contrast, grid type, and handwriting difficulty, then compare metrics by subgroup;
-- improve line/region segmentation for hard pages before testing line-level OCR models again;
-- test targeted second-pass VLM prompts only on low-confidence pages instead of rerunning every image;
-- measure downstream preservation of student mistakes separately from raw OCR CER/WER.
-
-Earlier one-sample Yandex baseline, kept as part of the research history:
-
-| Provider | Dataset | CER | WER | Time | Notes |
-| --- | --- | ---: | ---: | ---: | --- |
-| `yandex` | first handwritten sample, original image | 0.056 | 0.171 | 2.912s | Strong OCR API baseline; preprocessed variant degraded to CER 0.065 and WER 0.257. |
-
-For the educational task, evaluate two layers separately:
-
-- OCR/VLM to text: CER, WER, speed, and cost;
-- OCR/VLM to error detection: whether the final grammar analysis finds the real student mistakes.
-
-This second layer matters because an OCR system with worse WER may still preserve the mistakes that are important for feedback.
+- VLMs outperform classic OCR on Russian handwritten school text.
+- `qwen25_vl_72b` is the strongest transcription baseline by CER/WER.
+- `gemma3_vision` is the second-best VLM baseline.
+- `yandex` is the strongest classic OCR/API baseline and is fast, but less accurate than VLMs on difficult handwriting.
+- Raw OCR accuracy is not enough for educational feedback: models can silently correct student mistakes.
+- The `preserve_student_errors_strict` prompt improves mistake preservation for Qwen and Gemma.
+- Preservation-risk reports flag places where OCR may have corrected or lost real student mistakes before LLM analysis.
 
 ## Project Structure
 
