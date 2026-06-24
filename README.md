@@ -284,6 +284,17 @@ Student mistake preservation on the current 9-sample set:
 
 This shows a separate research tradeoff: `qwen25_vl_72b` is best at transcription accuracy, but it often normalizes student mistakes to the clean text. For educational error detection, the next OCR prompt/ensemble step should explicitly optimize mistake preservation, not only CER/WER.
 
+Strict VLM prompt results on the same 9-sample set:
+
+| Provider | Prompt | Avg Norm CER | Avg Norm WER | Preserved mistakes | Corrected mistakes | Preservation rate | Correction rate |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `qwen25_vl_72b` | default | 0.133 | 0.277 | 3 | 28 | 0.064 | 0.596 |
+| `qwen25_vl_72b` | `preserve_student_errors_strict` | 0.109 | 0.290 | 8 | 20 | 0.170 | 0.426 |
+| `gemma3_vision` | default | 0.271 | 0.484 | 2 | 21 | 0.043 | 0.447 |
+| `gemma3_vision` | `preserve_student_errors_strict` | 0.207 | 0.391 | 8 | 14 | 0.170 | 0.298 |
+
+The strict prompt improved mistake preservation for both VLM providers and also improved normalized CER. It should be treated as the preferred VLM prompt for the educational OCR task, with the caveat that Qwen's normalized WER rose slightly and both models became slower.
+
 Preservation-aware risk report for `qwen25_vl_72b`:
 
 | Risk status | Count | Meaning |
@@ -297,7 +308,7 @@ Preservation-aware risk report for `qwen25_vl_72b`:
 
 The practical rule is to keep `qwen25_vl_72b` as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the current set, this gives 15 targeted places for review instead of manually reviewing all 47 student-vs-correct differences.
 
-A strict mistake-preservation prompt was added for VLM-only experiments. The first run was incomplete because OpenRouter returned `402 Payment Required` before all pages finished. On the successful subset, `gemma3_vision` improved mistake preservation from 0.043 to 0.182, while `qwen25_vl_72b` did not improve. Treat this as a preliminary result until the full 9/9 rerun is completed.
+A strict mistake-preservation prompt was added for VLM-only experiments and completed successfully for `qwen25_vl_72b` and `gemma3_vision` on the 9-sample set. It reduced silent correction of student mistakes and improved normalized CER for both models.
 
 Next research directions:
 
