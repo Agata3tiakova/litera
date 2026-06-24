@@ -207,6 +207,19 @@ python scripts/ocr_student_mistake_preservation.py ^
 
 This analysis does not run OCR again. It compares `student_text` with `correct_text`, finds real student-vs-correct differences, and checks whether each OCR output preserved the student variant, corrected it, or lost the word.
 
+To identify places where the best OCR provider may have silently corrected a student mistake, build a preservation risk report:
+
+```bash
+python scripts/ocr_preservation_risk_report.py ^
+  --preservation tmp/ocr_student_mistake_preservation.csv ^
+  --base-provider qwen25_vl_72b ^
+  --support-providers yandex,cyrillic_trocr,gemma3_vision ^
+  --output tmp/ocr_preservation_risk.csv ^
+  --report tmp/ocr_preservation_risk.md
+```
+
+This is a preservation-aware ensemble signal. It does not automatically replace the base OCR text. It flags places where the base provider output looks corrected or lost, while another provider preserved the student spelling.
+
 Recommended first test set:
 
 - 30-50 Russian handwritten samples from different writers;
@@ -270,6 +283,19 @@ Student mistake preservation on the current 9-sample set:
 | `trocr` | 47 | 0 | 0 | 47 | 0.000 | 0.000 |
 
 This shows a separate research tradeoff: `qwen25_vl_72b` is best at transcription accuracy, but it often normalizes student mistakes to the clean text. For educational error detection, the next OCR prompt/ensemble step should explicitly optimize mistake preservation, not only CER/WER.
+
+Preservation-aware risk report for `qwen25_vl_72b`:
+
+| Risk status | Count | Meaning |
+| --- | ---: | --- |
+| `probable_base_correction_no_support` | 16 | Qwen used the clean variant; no support provider preserved the student variant. |
+| `probable_base_correction_with_preservation_support` | 12 | Qwen used the clean variant; at least one support provider preserved the student variant. |
+| `base_lost_but_support_preserved` | 3 | Qwen lost the place; another provider preserved the student variant. |
+| `base_preserved_student_mistake` | 3 | Qwen preserved the student variant. |
+| `base_lost_no_signal` | 12 | No useful provider signal. |
+| `base_lost_support_corrected` | 1 | Qwen lost the place; a support provider used the clean variant. |
+
+The practical rule is to keep `qwen25_vl_72b` as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the current set, this gives 15 targeted places for review instead of manually reviewing all 47 student-vs-correct differences.
 
 A strict mistake-preservation prompt was added for VLM-only experiments. The first run was incomplete because OpenRouter returned `402 Payment Required` before all pages finished. On the successful subset, `gemma3_vision` improved mistake preservation from 0.043 to 0.182, while `qwen25_vl_72b` did not improve. Treat this as a preliminary result until the full 9/9 rerun is completed.
 
