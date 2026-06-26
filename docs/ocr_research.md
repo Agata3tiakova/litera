@@ -17,7 +17,8 @@ The benchmark therefore tracks two layers:
 
 Current benchmark dataset:
 
-- 9 Russian handwritten school-text samples;
+- 14 Russian handwritten school-text samples;
+- the original 9-sample benchmark plus 5 additional checked notebook photos added on June 26, 2026;
 - phone photos and notebook/grid-paper images;
 - manually checked `student_text` references that preserve student mistakes;
 - separate `correct_text` references with the clean version of the text.
@@ -42,21 +43,36 @@ Vision-language models:
 - `qwen25_vl_72b`
 - `gemma3_vision`
 
-Other VLM providers are integrated in the codebase, but the current 9-sample benchmark focuses on models that completed reliable runs.
+Other VLM providers are integrated in the codebase, but the current benchmark focuses on models that completed reliable runs.
 
 ## Main OCR Metrics
 
-Current 9-sample benchmark, using `student_text` as the primary reference:
+Current 14-sample benchmark, using `student_text` as the primary reference:
+
+| Provider | Type | Runs | Avg normalized CER | Avg normalized WER | Avg clean normalized CER | Avg clean normalized WER | Avg time |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `qwen25_vl_72b` | VLM | 14 | 0.097 | 0.217 | 0.123 | 0.220 | 6.200s |
+| `gemma3_vision` | VLM | 14 | 0.197 | 0.372 | 0.212 | 0.359 | 4.992s |
+| `yandex` | OCR API | 14 | 0.310 | 0.480 | 0.349 | 0.520 | 2.499s |
+| `cyrillic_trocr` | Transformer OCR | 9 | 0.686 | 0.958 | 0.705 | 0.996 | 296.509s |
+| `easyocr` | OCR | 14 | 0.868 | 1.224 | 0.854 | 1.216 | 12.937s |
+| `tesseract` | OCR | 14 | 0.927 | 1.349 | 0.922 | 1.335 | 2.161s |
+| `trocr` | Transformer OCR | 14 | 0.984 | 1.000 | 0.985 | 1.000 | 5.801s |
+
+The five added samples were easier than the original hard 9-sample set, so the absolute CER/WER values improved for the VLM and API models. The ranking did not change: Qwen remains first, Gemma second, and Yandex the strongest classic OCR/API baseline.
+
+New 5-sample run only:
 
 | Provider | Type | Avg normalized CER | Avg normalized WER | Avg time |
 | --- | --- | ---: | ---: | ---: |
-| `qwen25_vl_72b` | VLM | 0.133 | 0.277 | 6.129s |
-| `gemma3_vision` | VLM | 0.271 | 0.484 | 4.006s |
-| `yandex` | OCR API | 0.417 | 0.609 | 2.674s |
-| `cyrillic_trocr` | Transformer OCR | 0.686 | 0.958 | 296.509s |
-| `easyocr` | OCR | 0.883 | 1.133 | 17.974s |
-| `tesseract` | OCR | 0.962 | 1.455 | 3.013s |
-| `trocr` | Transformer OCR | 0.978 | 1.000 | 5.780s |
+| `qwen25_vl_72b` | VLM | 0.034 | 0.110 | 6.327s |
+| `gemma3_vision` | VLM | 0.063 | 0.171 | 6.766s |
+| `yandex` | OCR API | 0.119 | 0.247 | 2.184s |
+| `easyocr` | OCR | 0.840 | 1.387 | 3.871s |
+| `tesseract` | OCR | 0.863 | 1.159 | 0.628s |
+| `trocr` | Transformer OCR | 0.995 | 1.000 | 5.838s |
+
+`cyrillic_trocr` did not complete the new 5-sample run on the current environment. PyTorch is installed as CPU-only (`torch 2.12.1+cpu`), and the Cyrillic TrOCR line-level provider timed out after 15 minutes for all five samples and after 5 minutes for a single sample.
 
 ### Interpretation
 
@@ -72,32 +88,32 @@ Because VLMs tend to correct text by context, a stricter prompt was added:
 
 This prompt explicitly asks the model to preserve spelling mistakes, wrong word forms, punctuation mistakes, line breaks, and visually written words even when they are grammatically wrong.
 
-| Provider | Prompt | Avg Norm CER | Avg Norm WER | Preserved mistakes | Corrected mistakes | Preservation rate | Correction rate |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `qwen25_vl_72b` | default | 0.133 | 0.277 | 3 | 28 | 0.064 | 0.596 |
-| `qwen25_vl_72b` | `preserve_student_errors_strict` | 0.109 | 0.290 | 8 | 20 | 0.170 | 0.426 |
-| `gemma3_vision` | default | 0.271 | 0.484 | 2 | 21 | 0.043 | 0.447 |
-| `gemma3_vision` | `preserve_student_errors_strict` | 0.207 | 0.391 | 8 | 14 | 0.170 | 0.298 |
+| Provider | Prompt | Runs | Avg Norm CER | Avg Norm WER | Preserved mistakes | Corrected mistakes | Preservation rate | Correction rate |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `qwen25_vl_72b` | default | 14 | 0.097 | 0.217 | 8 | 49 | 0.103 | 0.628 |
+| `qwen25_vl_72b` | `preserve_student_errors_strict` | 14 | 0.088 | 0.253 | 21 | 28 | 0.269 | 0.359 |
+| `gemma3_vision` | default | 14 | 0.197 | 0.372 | 5 | 44 | 0.064 | 0.564 |
+| `gemma3_vision` | `preserve_student_errors_strict` | 14 | 0.152 | 0.325 | 14 | 25 | 0.179 | 0.321 |
 
 ### Strict Prompt Findings
 
-The strict prompt improved mistake preservation for both VLM providers. It also improved normalized CER for both models. Qwen's normalized WER rose slightly, but the overall result is better for the educational OCR task because fewer real student mistakes are silently corrected.
+The strict prompt improved mistake preservation for both VLM providers. It also improved normalized CER for both models. Qwen's normalized WER rose compared with the default prompt, but the overall result is better for the educational OCR task because fewer real student mistakes are silently corrected. Gemma improved both CER and WER with the strict prompt.
 
 For this project, `preserve_student_errors_strict` should be treated as the preferred VLM OCR prompt.
 
 ## Student Mistake Preservation
 
-The dataset contains 47 detected student-vs-correct differences. These are real places where the student wrote something different from the clean reference.
+The 14-sample dataset contains 78 detected student-vs-correct differences. These are real places where the student wrote something different from the clean reference.
 
 | Provider | Checked mistakes | Preserved | Corrected | Lost | Preservation rate | Correction rate |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `yandex` | 47 | 12 | 10 | 25 | 0.255 | 0.213 |
+| `yandex` | 78 | 28 | 18 | 32 | 0.359 | 0.231 |
 | `cyrillic_trocr` | 47 | 9 | 0 | 38 | 0.191 | 0.000 |
-| `qwen25_vl_72b` | 47 | 3 | 28 | 16 | 0.064 | 0.596 |
-| `gemma3_vision` | 47 | 2 | 21 | 24 | 0.043 | 0.447 |
-| `tesseract` | 47 | 1 | 0 | 46 | 0.021 | 0.000 |
-| `easyocr` | 47 | 0 | 0 | 47 | 0.000 | 0.000 |
-| `trocr` | 47 | 0 | 0 | 47 | 0.000 | 0.000 |
+| `qwen25_vl_72b` | 78 | 8 | 49 | 21 | 0.103 | 0.628 |
+| `gemma3_vision` | 78 | 5 | 44 | 29 | 0.064 | 0.564 |
+| `tesseract` | 78 | 2 | 0 | 76 | 0.026 | 0.000 |
+| `easyocr` | 78 | 1 | 0 | 77 | 0.013 | 0.000 |
+| `trocr` | 78 | 1 | 0 | 77 | 0.013 | 0.000 |
 
 ### Preservation Findings
 
@@ -107,7 +123,7 @@ For educational analysis, the best approach is not simply "use the lowest CER ou
 
 ## Preservation-Aware Risk Report
 
-The project includes a risk report that uses Qwen as the base transcription and checks whether other providers preserve student variants that Qwen corrected or lost.
+The project includes a risk report that uses Qwen as the base transcription and checks whether other providers preserve student variants that Qwen corrected or lost. The current risk table below is from the earlier 9-sample run and should be regenerated before using it for the 14-sample dataset.
 
 | Risk status | Count | Meaning |
 | --- | ---: | --- |
@@ -118,7 +134,7 @@ The project includes a risk report that uses Qwen as the base transcription and 
 | `base_lost_no_signal` | 12 | No useful provider signal. |
 | `base_lost_support_corrected` | 1 | Qwen lost the place; a support provider used the clean variant. |
 
-The practical rule is to keep Qwen as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the current set, this gives 15 targeted places for review instead of manually reviewing all 47 differences.
+The practical rule is to keep Qwen as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the 9-sample risk run, this gave 15 targeted places for review instead of manually reviewing all 47 differences.
 
 ## Typical Error Patterns
 
