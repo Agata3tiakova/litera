@@ -18,7 +18,7 @@ The benchmark therefore tracks two layers:
 Current benchmark dataset:
 
 - 14 Russian handwritten school-text samples;
-- the original 9-sample benchmark plus 5 additional checked notebook photos added on June 26, 2026;
+- all 14 samples contain the same base text, written by different students with different handwriting styles and different mistakes;
 - phone photos and notebook/grid-paper images;
 - manually checked `student_text` references that preserve student mistakes;
 - separate `correct_text` references with the clean version of the text.
