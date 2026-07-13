@@ -18,30 +18,36 @@ Research report: [OCR Research: Russian Handwritten School Text](docs/ocr_resear
 
 ## Tech Stack
 
-- Python / Flask
-- Flask-SQLAlchemy
-- SQLite
-- OpenCV
-- Yandex Vision API
-- YandexGPT
-- Bootstrap
+| Area | Technologies |
+| --- | --- |
+| Web application | Python, Flask, Flask-SQLAlchemy |
+| Database | SQLite |
+| Image processing | OpenCV |
+| OCR provider layer | Yandex Vision API, Tesseract, EasyOCR |
+| Transformer OCR / VLM research | Hugging Face Transformers, TrOCR, Cyrillic TrOCR, Florence-2, OpenRouter-compatible VLMs |
+| Text analysis | YandexGPT |
+| Frontend | Bootstrap |
 
-## OCR Providers
+`Yandex Vision API` and `YandexGPT` are part of the application runtime: Yandex Vision can be used as the default OCR provider, and YandexGPT is used for grammar/style analysis after OCR. Other OCR and VLM systems are connected through the benchmark/provider layer and are listed below.
+
+## OCR/VLM Providers
 
 The app uses `OCR_PROVIDER=yandex` by default. OCR engines are implemented as interchangeable providers:
 
-- `yandex` - current Yandex Vision integration;
-- `tesseract` - local Tesseract via `pytesseract`;
-- `easyocr` - local EasyOCR with Russian and English languages;
-- `trocr` - Hugging Face TrOCR model interface;
-- `cyrillic_trocr` - Hugging Face TrOCR model fine-tuned for Cyrillic handwriting;
-- `qwen25_vl_7b` - Qwen2.5-VL 7B via OpenRouter-compatible chat completions;
-- `qwen25_vl_32b` - Qwen2.5-VL 32B via OpenRouter-compatible chat completions;
-- `qwen25_vl_72b` - Qwen2.5-VL 72B via OpenRouter-compatible chat completions;
-- `gemma3_vision` - Gemma 3 Vision via OpenRouter-compatible chat completions;
-- `internvl` - InternVL via OpenRouter-compatible chat completions;
-- `minicpm_v` - MiniCPM-V via OpenRouter-compatible chat completions;
-- `florence2` - local Microsoft Florence-2 through Hugging Face Transformers.
+| Provider | Type | Notes |
+| --- | --- | --- |
+| `yandex` | OCR API | Yandex Vision integration and current default provider. |
+| `tesseract` | Local OCR | Local Tesseract via `pytesseract`. |
+| `easyocr` | Local OCR | Local EasyOCR with Russian and English language support. |
+| `trocr` | Transformer OCR | Generic Hugging Face TrOCR interface. |
+| `cyrillic_trocr` | Transformer OCR | `cyrillic-trocr/trocr-handwritten-cyrillic`, fine-tuned for Cyrillic handwriting. |
+| `qwen25_vl_7b` | VLM | Qwen2.5-VL 7B via OpenRouter-compatible chat completions. |
+| `qwen25_vl_32b` | VLM | Qwen2.5-VL 32B via OpenRouter-compatible chat completions. |
+| `qwen25_vl_72b` | VLM | Qwen2.5-VL 72B via OpenRouter-compatible chat completions. |
+| `gemma3_vision` | VLM | Gemma 3 Vision via OpenRouter-compatible chat completions. |
+| `internvl` | VLM | InternVL via OpenRouter-compatible chat completions. |
+| `minicpm_v` | VLM | MiniCPM-V via OpenRouter-compatible chat completions. |
+| `florence2` | Document/VLM baseline | Local Microsoft Florence-2 through Hugging Face Transformers. |
 
 For Russian handwritten text, Yandex and other cloud OCR systems are good baselines to benchmark first. EasyOCR is a useful local baseline with Cyrillic support, but should be measured on your own handwriting samples. The default `trocr` model is not Russian-specific; `cyrillic_trocr` uses `cyrillic-trocr/trocr-handwritten-cyrillic`, a Cyrillic handwriting checkpoint for Russian, Ukrainian, and Church Slavonic. The Cyrillic TrOCR provider segments pages into line crops by default because TrOCR checkpoints are trained for line-level recognition, not full-page transcription.
 
@@ -232,13 +238,13 @@ Full metrics, OCR vs VLM comparison, student-mistake preservation analysis, stri
 
 Current high-level findings:
 
-- VLMs outperform classic OCR on Russian handwritten school text.
+- VLMs produce the best CER/WER on Russian handwritten school text because they use visual and language context together.
+- Classic OCR systems remain useful baselines, but they lose many handwritten words on notebook photos.
 - `qwen25_vl_72b` is the strongest transcription baseline by CER/WER.
 - `gemma3_vision` is the second-best VLM baseline.
-- `yandex` is the strongest classic OCR/API baseline and is fast, but less accurate than VLMs on difficult handwriting.
-- Raw OCR accuracy is not enough for educational feedback: models can silently correct student mistakes.
-- The `preserve_student_errors_strict` prompt improves mistake preservation for Qwen and Gemma.
-- Preservation-risk reports flag places where OCR may have corrected or lost real student mistakes before LLM analysis.
+- `yandex` is the strongest OCR/API baseline and is faster than VLMs, but less accurate on difficult handwriting.
+- Raw OCR accuracy is not enough for this educational task because VLMs can silently correct student mistakes.
+- The `preserve_student_errors_strict` prompt and preservation-risk reports were added to improve recognition while protecting real student mistakes before LLM analysis.
 
 ## Project Structure
 
