@@ -247,12 +247,3 @@ Typical errors:
 5. The benchmark was changed to use `student_text` as the primary reference and `correct_text` only as a secondary clean reference. This prevents models from being rewarded for correcting the student's writing when the actual OCR task is to transcribe what was written.
 6. A preservation-aware risk report was added because no single model is reliable enough by itself. Qwen remains the base transcription model, but Yandex, Cyrillic TrOCR, and Gemma are used as support signals when they preserve a student variant that Qwen corrected or lost. On the 14-sample run, this identifies 29 targeted suspicious places instead of manually reviewing all 78 differences.
 7. The practical improvement is a two-layer OCR workflow: first choose the strongest transcription model by CER/WER, then add prompt constraints and cross-model preservation checks to protect real student mistakes before the separate LLM grammar-analysis step.
-
-## Next Steps
-
-- expand the dataset to 30-50 checked Russian handwritten samples;
-- add metadata for blur, tilt, contrast, grid type, and handwriting difficulty;
-- evaluate strict VLM prompts on the larger set;
-- pass preservation-risk rows into the LLM analysis stage;
-- test whether LLM feedback improves when it receives suspicious OCR-normalization points;
-- explore better line/region segmentation for line-level OCR models.
