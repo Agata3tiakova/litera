@@ -54,25 +54,14 @@ Current 14-sample benchmark, using `student_text` as the primary reference:
 | `qwen25_vl_72b` | VLM | 14 | 0.097 | 0.217 | 0.123 | 0.220 | 6.200s |
 | `gemma3_vision` | VLM | 14 | 0.197 | 0.372 | 0.212 | 0.359 | 4.992s |
 | `yandex` | OCR API | 14 | 0.310 | 0.480 | 0.349 | 0.520 | 2.499s |
-| `cyrillic_trocr` | Transformer OCR | 9 | 0.686 | 0.958 | 0.705 | 0.996 | 296.509s |
+| `cyrillic_trocr` | Transformer OCR | 9/14 | 0.686 | 0.958 | 0.705 | 0.996 | 296.509s |
 | `easyocr` | OCR | 14 | 0.868 | 1.224 | 0.854 | 1.216 | 12.937s |
 | `tesseract` | OCR | 14 | 0.927 | 1.349 | 0.922 | 1.335 | 2.161s |
 | `trocr` | Transformer OCR | 14 | 0.984 | 1.000 | 0.985 | 1.000 | 5.801s |
 
-The five added samples were easier than the original hard 9-sample set, so the absolute CER/WER values improved for the VLM and API models. The ranking did not change: Qwen remains first, Gemma second, and Yandex the strongest classic OCR/API baseline.
+The ranking did not change on the expanded dataset: Qwen remains first, Gemma second, and Yandex the strongest classic OCR/API baseline.
 
-New 5-sample run only:
-
-| Provider | Type | Avg normalized CER | Avg normalized WER | Avg time |
-| --- | --- | ---: | ---: | ---: |
-| `qwen25_vl_72b` | VLM | 0.034 | 0.110 | 6.327s |
-| `gemma3_vision` | VLM | 0.063 | 0.171 | 6.766s |
-| `yandex` | OCR API | 0.119 | 0.247 | 2.184s |
-| `easyocr` | OCR | 0.840 | 1.387 | 3.871s |
-| `tesseract` | OCR | 0.863 | 1.159 | 0.628s |
-| `trocr` | Transformer OCR | 0.995 | 1.000 | 5.838s |
-
-`cyrillic_trocr` did not complete the new 5-sample run on the current environment. PyTorch is installed as CPU-only (`torch 2.12.1+cpu`), and the Cyrillic TrOCR line-level provider timed out after 15 minutes for all five samples and after 5 minutes for a single sample.
+`cyrillic_trocr` completed only 9 of 14 samples on the current environment. On 5 of 14 samples it did not finish: PyTorch is installed as CPU-only (`torch 2.12.1+cpu`), and the Cyrillic TrOCR line-level provider timed out after 15 minutes for the remaining batch and after 5 minutes for a single sample from that group.
 
 ### Interpretation
 
@@ -115,6 +104,8 @@ The 14-sample dataset contains 78 detected student-vs-correct differences. These
 | `easyocr` | 78 | 1 | 0 | 77 | 0.013 | 0.000 |
 | `trocr` | 78 | 1 | 0 | 77 | 0.013 | 0.000 |
 
+`cyrillic_trocr` preservation metrics cover only the 9 samples it completed; the remaining 5 of 14 samples timed out.
+
 ### Preservation Findings
 
 This table shows a key research tradeoff. Qwen is best by CER/WER, but the default prompt often normalizes mistakes to the clean reference. Yandex preserves more student variants, but also loses many difficult words. Cyrillic TrOCR sometimes preserves student-like variants, but loses too much text overall.
@@ -123,7 +114,7 @@ For educational analysis, the best approach is not simply "use the lowest CER ou
 
 ## Preservation-Aware Risk Report
 
-The project includes a risk report that uses Qwen as the base transcription and checks whether other providers preserve student variants that Qwen corrected or lost. The current risk table below is from the earlier 9-sample run and should be regenerated before using it for the 14-sample dataset.
+The project includes a risk report that uses Qwen as the base transcription and checks whether other providers preserve student variants that Qwen corrected or lost. The current risk table below covers a partial 9/14 run and should be regenerated before using it for the full 14-sample dataset.
 
 | Risk status | Count | Meaning |
 | --- | ---: | --- |
@@ -134,7 +125,7 @@ The project includes a risk report that uses Qwen as the base transcription and 
 | `base_lost_no_signal` | 12 | No useful provider signal. |
 | `base_lost_support_corrected` | 1 | Qwen lost the place; a support provider used the clean variant. |
 
-The practical rule is to keep Qwen as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the 9-sample risk run, this gave 15 targeted places for review instead of manually reviewing all 47 differences.
+The practical rule is to keep Qwen as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the partial risk run, this gave 15 targeted places for review instead of manually reviewing all 47 differences.
 
 ## Typical Error Patterns
 
