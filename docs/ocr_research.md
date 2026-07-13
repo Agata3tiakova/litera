@@ -114,18 +114,26 @@ For educational analysis, the best approach is not simply "use the lowest CER ou
 
 ## Preservation-Aware Risk Report
 
-The project includes a risk report that uses Qwen as the base transcription and checks whether other providers preserve student variants that Qwen corrected or lost. The current risk table below covers a partial 9/14 run and should be regenerated before using it for the full 14-sample dataset.
+The project includes a risk report that uses Qwen as the base transcription and checks whether other providers preserve student variants that Qwen corrected or lost. The current risk table covers all 78 detected student-vs-correct differences in the 14-sample dataset.
 
 | Risk status | Count | Meaning |
 | --- | ---: | --- |
-| `probable_base_correction_no_support` | 16 | Qwen used the clean variant; no support provider preserved the student variant. |
-| `probable_base_correction_with_preservation_support` | 12 | Qwen used the clean variant; at least one support provider preserved the student variant. |
+| `probable_base_correction_with_preservation_support` | 26 | Qwen used the clean variant; at least one support provider preserved the student variant. |
+| `probable_base_correction_no_support` | 23 | Qwen used the clean variant; no support provider preserved the student variant. |
+| `base_lost_no_signal` | 15 | No useful provider signal. |
+| `base_preserved_student_mistake` | 8 | Qwen preserved the student variant. |
 | `base_lost_but_support_preserved` | 3 | Qwen lost the place; another provider preserved the student variant. |
-| `base_preserved_student_mistake` | 3 | Qwen preserved the student variant. |
-| `base_lost_no_signal` | 12 | No useful provider signal. |
-| `base_lost_support_corrected` | 1 | Qwen lost the place; a support provider used the clean variant. |
+| `base_lost_support_corrected` | 3 | Qwen lost the place; a support provider used the clean variant. |
 
-The practical rule is to keep Qwen as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the partial risk run, this gave 15 targeted places for review instead of manually reviewing all 47 differences.
+The practical rule is to keep Qwen as the base transcription, but pass `probable_base_correction_with_preservation_support` and `base_lost_but_support_preserved` rows to the next LLM step as suspicious OCR-normalization points. On the 14-sample run, this gives 29 targeted places for review instead of manually reviewing all 78 differences.
+
+Preservation support providers in this report:
+
+| Provider | Preserved student variant count |
+| --- | ---: |
+| `yandex` | 28 |
+| `cyrillic_trocr` | 9 |
+| `gemma3_vision` | 5 |
 
 ## Typical Error Patterns
 
