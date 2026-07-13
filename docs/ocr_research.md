@@ -240,13 +240,13 @@ Typical errors:
 
 ## Conclusions
 
-1. VLMs are currently the strongest direction for Russian handwritten school text.
-2. Qwen2.5-VL-72B is the best base transcription model by CER/WER.
-3. The strict mistake-preservation prompt improves VLM usefulness for educational analysis.
-4. Classic OCR systems are useful baselines, but not strong enough for the main handwritten recognition task.
-5. Yandex remains a valuable OCR API baseline because it is fast and sometimes preserves student mistakes better than VLMs.
-6. OCR evaluation must use `student_text` as the primary reference; clean corrected text should be secondary.
-7. For educational feedback, raw CER/WER is not enough. The system must measure whether OCR preserved student mistakes.
+1. Classic OCR and VLMs make different kinds of errors because they solve different tasks. OCR systems mostly recognize visual symbols and local word shapes, so they often lose handwritten words, split words incorrectly, or produce noisy fragments on notebook photos. VLMs read the image together with language context, so they produce more coherent text and lower CER/WER, but they can replace the student's misspelled word with the grammatically expected word.
+2. This structural difference explains the metric gap. VLMs have much better transcription metrics on the 14-sample Russian handwriting benchmark: Qwen2.5-VL-72B reaches normalized CER 0.097 and WER 0.217, while Yandex, the strongest OCR/API baseline, reaches CER 0.310 and WER 0.480. Local classic OCR baselines are much weaker on full-page handwriting.
+3. The same structural difference creates a separate educational risk. A VLM can look better by CER/WER while silently correcting real student mistakes. Default Qwen preserved only 8 of 78 checked student mistakes and corrected 49, so raw transcription quality alone is not enough for this project.
+4. The strict VLM prompt was added to reduce contextual normalization. For Qwen, it improved normalized CER from 0.097 to 0.088 and raised mistake preservation from 8 to 21 cases, while reducing corrections from 49 to 28. For Gemma, it improved normalized CER from 0.197 to 0.152 and WER from 0.372 to 0.325, with better mistake preservation.
+5. The benchmark was changed to use `student_text` as the primary reference and `correct_text` only as a secondary clean reference. This prevents models from being rewarded for correcting the student's writing when the actual OCR task is to transcribe what was written.
+6. A preservation-aware risk report was added because no single model is reliable enough by itself. Qwen remains the base transcription model, but Yandex, Cyrillic TrOCR, and Gemma are used as support signals when they preserve a student variant that Qwen corrected or lost. On the 14-sample run, this identifies 29 targeted suspicious places instead of manually reviewing all 78 differences.
+7. The practical improvement is a two-layer OCR workflow: first choose the strongest transcription model by CER/WER, then add prompt constraints and cross-model preservation checks to protect real student mistakes before the separate LLM grammar-analysis step.
 
 ## Next Steps
 
